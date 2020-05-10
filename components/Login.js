@@ -1,66 +1,168 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, ImageBackground, Image, KeyboardAvoidingView, Text } from 'react-native';
-import {heightPercentageToDP as hp} from 'react-native-responsive-screen';
-import { connect } from 'react-redux';
+import { StyleSheet, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Text, Keyboard } from 'react-native';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import AwesomeButton from 'react-native-really-awesome-button';
+import { Actions } from 'react-native-router-flux'
+import * as firebase from 'firebase';
 
 class Login extends Component {
 
-  render () {
+  constructor(props) {
+
+    super(props);
+    this.state = {
+      email: '',
+      password: '',
+      error: '',
+      loading: false,
+      text: 'LOGIN',
+
+    };
+    console.ignoredYellowBox = [
+      'Setting a timer'
+    ];
+
+    this.login = this.login.bind(this)
+  }
+
+  login() {
+
+    Keyboard.dismiss();
+    this.setState({ error: '', loading: true, text: 'LOGGING IN' });
+    const { email, password } = this.state;
+    if (this.state.email == '' || this.state.password == '') this.setState({ error: "Please fill out all fields.", loading: false, text: "LOGIN" })
+    else {
+      firebase.auth().signInWithEmailAndPassword(email, password).then(data => {
+        this.setState({ uid: data.user.uid });
+        Actions.mainScreen();
+      }).catch(err => {
+        console.log(err)
+        this.setState({ error: 'The Email or Password you have entered is incorrect!', loading: false, text: 'LOGIN' })
+      })
+    }
+  }
+
+  render() {
     return (
-    //   <ImageBackground  source={require('../../assets/images/LoginBackground.jpg')} style={styles.container}>
-        <View style={styles.overlayContainer}>
+      <View style={styles.overlayContainer}>
         <KeyboardAvoidingView behavior='position'>
-        <View style={styles.logoContainer}>
+          <View style={styles.logoContainer}>
             {/* <Image 
             style={styles.logo}
             source={require('../../assets/images/KSACKbag.png')}/> */}
-            <View style ={styles.border}>
-            <Text style={styles.header}>T A C K L E B O X</Text>
+            <View style={styles.border}>
+              <Text style={styles.header}>T A C K L E B O X</Text>
             </View>
-        </View>
-        <View style={styles.formContainer}>
-        </View>
+          </View>
+          <View style={styles.formContainer}>
+            <TextInput placeholder={"Email.."} placeholderTextColor='#000000' onChangeText={(email) => this.setState({ email: email })}
+              style={styles.input} />
+            <TextInput placeholder={"Password.."} placeholderTextColor='#000000' secureTextEntry onChangeText={(password) => this.setState({ password: password })}
+              style={styles.input} />
+            <Text style={styles.error}>{this.state.error}</Text>
+            <AwesomeButton
+              height={hp('6%')}
+              width={wp('80%')}
+              alignItems={'center'}
+              backgroundColor={'#ffa012'}
+              backgroundDarker={'#ff9e1f'}
+              onPress={this.login}>
+              <Text style={styles.buttonText}>{this.state.text}</Text>
+            </AwesomeButton>
+
+            <View style={styles.signupTextCont}>
+              <Text style={styles.signupText}>Don't have an account yet? </Text>
+              <TouchableOpacity onPress={() => {
+                Actions.registration()
+              }}>
+                <Text style={styles.signupButton}>Register Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </KeyboardAvoidingView>
       </View>
-    //   </ImageBackground>
     );
   }
 }
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    overlayContainer: {
-      flex:1,
-      backgroundColor: 'rgba(0, 0, 0, .8)'
-    },
+  overlayContainer: {
+    flex: 1,
+    backgroundColor: '#fff'
+  },
 
-    logoContainer: {
-      height: hp('55%'),
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
+  logoContainer: {
+    height: hp('50%'),
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
 
-    border:{
-      borderBottomColor: '#fff',
-      borderBottomWidth: 2,
-    },
+  formContainer: {
+    padding: wp('10%'),
+    alignItems: 'center'
+  },
 
-    header: {
-      color: '#fff',
-      fontSize: 28,
-      fontWeight: '500',
-      borderBottomColor: '#fff',
-      borderBottomWidth: 2,
-      paddingVertical: hp('2%')
-    },
+  border: {
+    borderBottomColor: '#fff',
+    borderBottomWidth: 2,
+  },
 
-    logo: {
-      height: hp('30%'),
-      width: hp('30%'),
-    },
-    
+  header: {
+    color: '#15b9ff',
+    fontSize: 28,
+    fontWeight: '500',
+    borderBottomColor: '#15b9ff',
+    borderBottomWidth: 2,
+    paddingVertical: hp('2%')
+  },
+
+  logo: {
+    height: hp('30%'),
+    width: hp('30%'),
+  },
+
+  input: {
+    height: wp('12%'),
+    width: wp('70%'),
+    backgroundColor: '#a3a3a3',
+    marginBottom: wp('5%'),
+    paddingHorizontal: wp('5%'),
+    borderRadius: wp('2%'),
+    color: '#000000'
+  },
+
+  buttonText: {
+    fontSize: 16,
+    // fontWeight: '500',
+    color: 'white'
+  },
+
+  signupTextCont: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingTop: wp('2%'),
+    paddingBottom: wp('2%'),
+    flexDirection: "column"
+  },
+
+  signupText: {
+    color: "#000",
+    fontSize: 16
+  },
+
+  signupButton: {
+    color: "#ffa012",
+    fontSize: 16,
+    fontWeight: '500',
+    textDecorationLine: 'underline'
+  },
+
+  error: {
+    marginBottom: 10,
+    textAlign: 'center'
+  }
+
+
 });
 
 export default Login;
