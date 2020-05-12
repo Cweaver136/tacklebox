@@ -2,10 +2,9 @@ import React, { Component } from 'react';
 import { Router, Scene, Stack, Lightbox } from "react-native-router-flux"
 
 // screens to add to the router navigation
-import Login from './Login';
-import Registration from './Registration';
-import MainScreen from './MainScreen';
-import Drawer from './Drawer';
+import Login from './screens/Login';
+import Registration from './screens/Registration';
+import MainScreen from './screens/MainScreen';
 
 export default class Navigation extends Component {
 
