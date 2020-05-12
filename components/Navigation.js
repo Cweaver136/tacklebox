@@ -12,22 +12,13 @@ export default class Navigation extends Component {
     render() {
         return (
             <Router>
-                <Stack>
-                    <Lightbox hideNavBar>
-
-                        {/* These are all regular screens */}
-                        <Scene key="root">
-                            <Scene key="login" component={Login} initial={true} hideNavBar />
-                            <Scene key="registration" component={Registration} hideNavBar />
-
-                            {/* This defines which screens will have the drawer */}
-                            <Scene key="drawer" navigationBarStyle={{ backgroundColor: '#06531D' }} drawerPosition="left" contentComponent={Drawer} hideNavBar drawer={true} drawerWidth={200} >
-                                <Scene key="mainScreen" component={MainScreen} navigationBarStyle={{ backgroundColor: '#06531D' }} titleStyle={{ color: '#FFFFFF' }} title="Lobby"/>
-                            </Scene>
-                        </Scene>
-
-                        {/* These are the "modals" */}
-                    </Lightbox>
+                <Stack hideNavBar>
+                    {/* These are all regular screens */}
+                    <Scene key="root" navigationBarStyle={{ backgroundColor: '#15b9ff', height: 50 }}>
+                        <Scene key="login" component={Login} initial={true} hideNavBar />
+                        <Scene key="registration" component={Registration} hideNavBar />
+                        <Scene key="mainScreen" component={MainScreen} hideNavBar />
+                    </Scene>
                 </Stack>
             </Router>
         );
