@@ -21,6 +21,7 @@ class MainScreen extends Component {
     this.pauseFishing = this.pauseFishing.bind(this);
     this.resumeFishing = this.resumeFishing.bind(this);
     this.fishCaught = this.fishCaught.bind(this);
+    this.endFishing = this.endFishing.bind(this);
 
     console.ignoredYellowBox = [
       'Setting a timer'
@@ -32,10 +33,14 @@ class MainScreen extends Component {
   }
 
   startFishing() {
+    let time = this.state.view == 'end' ? 0 : this.state.time
+    let start = this.state.view == 'end' ? Date.now() : Date.now() - this.state.time
+    let fishTotal = this.state.view == 'end' ? 0 : this.state.fishTotal
     this.setState({
       view: 'fishing',
-      time: this.state.time,
-      start: Date.now() - this.state.time
+      time: time,
+      start: start,
+      fishTotal: fishTotal
     })
     this.timer = setInterval(() => {
       this.setState({
@@ -56,6 +61,10 @@ class MainScreen extends Component {
 
   fishCaught() {
     this.setState({ fishTotal: this.state.fishTotal + 1 })
+  }
+
+  endFishing() {
+    this.setState({ view: 'end' })
   }
 
   render() {
@@ -89,7 +98,7 @@ class MainScreen extends Component {
               <Text style={styles.textMain}>Time: {prettyMS(this.state.time, { unitCount: 2, secondsDecimalDigits: 0 })}</Text>
             </View>
             <View style={styles.infoSection}>
-              <Text style={styles.textMain}>Today's Fish: </Text>
+              <Text style={styles.textMain}>Today's Fish</Text>
             </View>
           </View>
           <View style={styles.buttonContainer}>
@@ -128,8 +137,13 @@ class MainScreen extends Component {
       return (
         <View style={styles.fishingView}>
           <View style={styles.fishingInfo}>
-            <Text style={styles.textMain}>Fish Totals: {this.state.fishTotal}</Text>
-            <Text style={styles.textMain}>Time: {prettyMS(this.state.time, { unitCount: 2, secondsDecimalDigits: 0 })}</Text>
+            <View style={styles.infoSection}>
+              <Text style={styles.textMain}>Fish Totals: {this.state.fishTotal}</Text>
+              <Text style={styles.textMain}>Time: {prettyMS(this.state.time, { unitCount: 2, secondsDecimalDigits: 0 })}</Text>
+            </View>
+            <View style={styles.pausedSection}>
+              <Text style={{ fontSize: 26 }}>PAUSED</Text>
+            </View>
           </View>
           <View style={styles.buttonContainer}>
             <AwesomeButton
@@ -154,13 +168,42 @@ class MainScreen extends Component {
               borderRadius={10}
               textSize={18}
               onPress={() => {
-                this.pauseFishing()
+                this.endFishing();
               }}>
               End
             </AwesomeButton>
           </View>
         </View>
       )
+    }
+
+    const end = () => {
+      return (
+        <View style={styles.fishingView}>
+          <View style={[styles.fishingInfo, { height: "36%" }]}>
+            <View style={[styles.infoSection, { height: "100%" }]}>
+              <Text style={styles.textMain}>Fish Totals: {this.state.fishTotal}</Text>
+              <Text style={styles.textMain}>Time: {prettyMS(this.state.time, { unitCount: 2, secondsDecimalDigits: 0 })}</Text>
+            </View>
+          </View>
+          <View style={[styles.buttonContainer, { height: "50%" }]}>
+            <AwesomeButton
+              height={wp('50%')}
+              width={wp('50%')}
+              alignItems={'center'}
+              backgroundColor={'#ffa012'}
+              backgroundDarker={'#ff9e1f'}
+              borderRadius={100}
+              textSize={26}
+              onPress={() => {
+                this.startFishing();
+              }}>
+              Let's Fish!
+            </AwesomeButton>
+          </View>
+        </View>
+      )
+
     }
 
     return (
@@ -173,6 +216,7 @@ class MainScreen extends Component {
             {this.state.view === 'start' ? start() : null}
             {this.state.view === 'fishing' ? fishing() : null}
             {this.state.view === 'pause' ? pause() : null}
+            {this.state.view === 'end' ? end() : null}
           </View>
           <View style={styles.buttonNav}>
             {/* This section features all the buttons for cycling through tabs. */}
@@ -258,7 +302,7 @@ const styles = StyleSheet.create({
   fishingInfo: {
     height: '80%',
     flexDirection: 'column',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
   },
   buttonContainer: {
     flex: 1,
@@ -273,6 +317,11 @@ const styles = StyleSheet.create({
     borderColor: 'grey',
     borderWidth: 2,
     padding: hp('2%')
+  },
+  pausedSection: {
+    height: '45%',
+    padding: hp('2%'),
+    alignItems: 'center',
   },
 
 
