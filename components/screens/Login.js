@@ -32,9 +32,12 @@ class Login extends Component {
     const { email, password } = this.state;
     if (this.state.email == '' || this.state.password == '') this.setState({ error: "Please fill out all fields.", loading: false, text: "LOGIN" })
     else {
-      firebase.auth().signInWithEmailAndPassword(email, password).then(data => {
-        this.setState({ uid: data.user.uid });
-        Actions.mainScreen();
+      firebase.auth().signInWithEmailAndPassword(email, password).then(async data => {
+        let sessionInfo = await firebase.database().ref(`users/${data.user.uid}/sessions`).once('value').then(s => s.val())
+        Actions.mainScreen({
+          uid: data.user.uid,
+          sessions: sessionInfo
+        });
       }).catch(err => {
         console.log(err)
         this.setState({ error: 'The Email or Password you have entered is incorrect!', loading: false, text: 'LOGIN' })
@@ -69,7 +72,6 @@ class Login extends Component {
               onPress={this.login}>
               <Text style={styles.buttonText}>{this.state.text}</Text>
             </AwesomeButton>
-
             <View style={styles.signupTextCont}>
               <Text style={styles.signupText}>Don't have an account yet? </Text>
               <TouchableOpacity onPress={() => {

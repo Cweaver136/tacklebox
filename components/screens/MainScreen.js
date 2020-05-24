@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Text, Keyboard } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Text, Keyboard, FlatList } from 'react-native';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import AwesomeButton from 'react-native-really-awesome-button'
 import * as firebase from 'firebase';
@@ -9,12 +9,13 @@ import prettyMS from 'pretty-ms';
 class MainScreen extends Component {
 
   constructor(props) {
-
     super(props);
     this.state = {
       view: "start",
       time: 0,
-      fishTotal: 0
+      fishTotal: 0,
+      uid: props.navigation.getParam("uid"),
+      sessions: props.navigation.getParam("sessions")
     };
 
     this.startFishing = this.startFishing.bind(this);
@@ -30,6 +31,13 @@ class MainScreen extends Component {
 
 
   componentDidMount() {
+    let sessions = [];
+    Object.entries(this.state.sessions).forEach(([key, value]) => {
+      let sessionData = value;
+      sessionData.key = key
+      sessions.push(sessionData)
+    })
+    this.setState({sessions: sessions})
   }
 
   startFishing() {
@@ -64,7 +72,16 @@ class MainScreen extends Component {
   }
 
   endFishing() {
+    // record fishing session
     this.setState({ view: 'end' })
+    console.log(this.state.time)
+    console.log(new Date().getTime())
+    let sessionData = {
+      time: this.state.time,
+      date: new Date().now(),
+      fishCaught: [],
+    }
+    firebase.database().ref(`users/${this.state.uid}/sessions`).push(sessionData)
   }
 
   render() {
@@ -203,7 +220,21 @@ class MainScreen extends Component {
           </View>
         </View>
       )
+    }
 
+    const history = () => {
+      return (
+        <View style={styles.historyView}>
+          <FlatList
+            data={this.state.sessions}
+            renderItem={({ item, index }) => (
+              <View key={item.key} style={styles.historyEntry}>              
+                <Text style={styles.historyDate}>{new Date(item.date).toLocaleDateString()}</Text>
+              </View>
+            )}
+          />
+        </View>
+      )
     }
 
     return (
@@ -217,37 +248,51 @@ class MainScreen extends Component {
             {this.state.view === 'fishing' ? fishing() : null}
             {this.state.view === 'pause' ? pause() : null}
             {this.state.view === 'end' ? end() : null}
+            {this.state.view === 'history' ? history() : null}
           </View>
           <View style={styles.buttonNav}>
             {/* This section features all the buttons for cycling through tabs. */}
 
-            {/* Inventory Button */}
-            <TouchableOpacity style={styles.navOption}>
-              <Text style={styles.navOptionText}>
-                Today
-                </Text>
-            </TouchableOpacity>
+            {/* Today Button */}
+            <AwesomeButton
+              height={hp('6%')}
+              width={wp('25%')}
+              alignItems={'center'}
+              backgroundColor={'#ffa012'}
+              backgroundDarker={'#ff9e1f'}
+              borderRadius={100}
+              textSize={16}
+              onPress={() => {
+              }}>
+              Today
+            </AwesomeButton>
 
-            {/* Log Button */}
-            <TouchableOpacity style={styles.navOption}>
-              <Text style={styles.navOptionText}>
-                Lures
-                </Text>
-            </TouchableOpacity>
+            {/* History button */}
+            <AwesomeButton
+              height={hp('6%')}
+              width={wp('25%')}
+              alignItems={'center'}
+              backgroundColor={'#ffa012'}
+              backgroundDarker={'#ff9e1f'}
+              borderRadius={100}
+              textSize={16}
+              onPress={() => { this.setState({ view: 'history' }) }}>
+              History
+            </AwesomeButton>
 
-            {/* Sort button */}
-            <TouchableOpacity style={styles.navOption}>
-              <Text style={styles.navOptionText}>
-                History
-                </Text>
-            </TouchableOpacity>
-
-            {/* Give Currency button */}
-            <TouchableOpacity style={styles.navOption}>
-              <Text style={styles.navOptionText}>
-                Logout
-                </Text>
-            </TouchableOpacity>
+            {/* Logout button */}
+            <AwesomeButton
+              height={hp('6%')}
+              width={wp('25%')}
+              alignItems={'center'}
+              backgroundColor={'#ffa012'}
+              backgroundDarker={'#ff9e1f'}
+              borderRadius={100}
+              textSize={16}
+              onPress={() => {
+              }}>
+              Logout
+            </AwesomeButton>
 
             {/* End of button tab container. */}
           </View>
@@ -324,6 +369,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  // HISTORY PAGE
+
+  historyEntry: {
+    width: '100%',
+    borderBottomColor: 'black',
+    borderBottomWidth: 2
+  },
+  historyDate: {
+    fontWeight: "bold"
+  },
+
 
   // FOOTER NAV
 
@@ -335,20 +391,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderTopColor: 'grey',
     borderTopWidth: 2,
-  },
-
-  navOption: {
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: "grey",
-    width: wp('25%'),
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  navOptionText: {
-    fontWeight: "600",
-    fontSize: 16,
   },
 
   // NORMALIZE
