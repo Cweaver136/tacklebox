@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, KeyboardAvoidingView, Text, Keyboard, FlatList } from 'react-native';
+import { StyleSheet, View, Text, FlatList } from 'react-native';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import AwesomeButton from 'react-native-really-awesome-button'
 import * as firebase from 'firebase';
-import { Actions } from 'react-native-router-flux'
 import prettyMS from 'pretty-ms';
+
+import FishOn from '../FishOn'
 
 class MainScreen extends Component {
 
@@ -15,7 +16,7 @@ class MainScreen extends Component {
       time: 0,
       fishTotal: 0,
       uid: props.navigation.getParam("uid"),
-      sessions: props.navigation.getParam("sessions")
+      currentSessionKey: ''
     };
 
     this.startFishing = this.startFishing.bind(this);
@@ -23,6 +24,7 @@ class MainScreen extends Component {
     this.resumeFishing = this.resumeFishing.bind(this);
     this.fishCaught = this.fishCaught.bind(this);
     this.endFishing = this.endFishing.bind(this);
+    this.confirmFish = this.confirmFish.bind(this);
 
     console.ignoredYellowBox = [
       'Setting a timer'
@@ -31,16 +33,26 @@ class MainScreen extends Component {
 
 
   componentDidMount() {
-    let sessions = [];
-    Object.entries(this.state.sessions).forEach(([key, value]) => {
-      let sessionData = value;
-      sessionData.key = key
-      sessions.push(sessionData)
+    firebase.database().ref(`users/${this.state.uid}/sessions`).on('value', snapshot => {
+      let sessions = [];
+      snapshot.forEach(session => {
+        let sessionData = session.val();
+        sessionData.key = session.key;
+        sessions.push(sessionData);
+      })
+      this.setState({ sessions: sessions })
     })
-    this.setState({sessions: sessions})
   }
 
   startFishing() {
+    if (!this.state.currentSessionKey) {
+      let newSessionKey = firebase.database().ref(`users/${this.state.uid}/sessions`).push().key
+      let newSessionRef = firebase.database().ref(`users/${this.state.uid}/sessions/${newSessionKey}`)
+
+      newSessionRef.set({
+        date: new Date().getTime(),
+      }).then(() => { this.setState({currentSessionKey: newSessionKey})})
+    }
     let time = this.state.view == 'end' ? 0 : this.state.time
     let start = this.state.view == 'end' ? Date.now() : Date.now() - this.state.time
     let fishTotal = this.state.view == 'end' ? 0 : this.state.fishTotal
@@ -48,13 +60,14 @@ class MainScreen extends Component {
       view: 'fishing',
       time: time,
       start: start,
-      fishTotal: fishTotal
+      fishTotal: fishTotal,
     })
     this.timer = setInterval(() => {
       this.setState({
         time: Date.now() - this.state.start
       })
     }, 1000);
+
   }
 
   pauseFishing() {
@@ -68,20 +81,20 @@ class MainScreen extends Component {
   }
 
   fishCaught() {
-    this.setState({ fishTotal: this.state.fishTotal + 1 })
+    this.setState({ view: 'fishOn' })
+  }
+
+  confirmFish() {
+    this.setState({ fishTotal: this.state.fishTotal + 1, view: "fishing" })
   }
 
   endFishing() {
     // record fishing session
     this.setState({ view: 'end' })
-    console.log(this.state.time)
-    console.log(new Date().getTime())
     let sessionData = {
       time: this.state.time,
-      date: new Date().now(),
-      fishCaught: [],
     }
-    firebase.database().ref(`users/${this.state.uid}/sessions`).push(sessionData)
+    firebase.database().ref(`users/${this.state.uid}/sessions/${this.state.currentSessionKey}`).update(sessionData)
   }
 
   render() {
@@ -127,9 +140,7 @@ class MainScreen extends Component {
               backgroundDarker={'#ff9e1f'}
               borderRadius={10}
               textSize={18}
-              onPress={() => {
-                this.fishCaught()
-              }}>
+              onPress={() => { this.setState({ view: "fishOn" }) }}>
               Fish Caught
             </AwesomeButton>
             <AwesomeButton
@@ -140,9 +151,7 @@ class MainScreen extends Component {
               backgroundDarker={'#ff9e1f'}
               borderRadius={10}
               textSize={18}
-              onPress={() => {
-                this.pauseFishing()
-              }}>
+              onPress={() => { this.pauseFishing() }}>
               Pause Fishing
             </AwesomeButton>
           </View>
@@ -171,9 +180,7 @@ class MainScreen extends Component {
               backgroundDarker={'#ff9e1f'}
               borderRadius={10}
               textSize={18}
-              onPress={() => {
-                this.resumeFishing()
-              }}>
+              onPress={() => { this.resumeFishing() }}>
               Resume
             </AwesomeButton>
             <AwesomeButton
@@ -184,9 +191,7 @@ class MainScreen extends Component {
               backgroundDarker={'#ff9e1f'}
               borderRadius={10}
               textSize={18}
-              onPress={() => {
-                this.endFishing();
-              }}>
+              onPress={() => { this.endFishing() }}>
               End
             </AwesomeButton>
           </View>
@@ -212,9 +217,7 @@ class MainScreen extends Component {
               backgroundDarker={'#ff9e1f'}
               borderRadius={100}
               textSize={26}
-              onPress={() => {
-                this.startFishing();
-              }}>
+              onPress={() => { this.startFishing(); }}>
               Let's Fish!
             </AwesomeButton>
           </View>
@@ -228,7 +231,7 @@ class MainScreen extends Component {
           <FlatList
             data={this.state.sessions}
             renderItem={({ item, index }) => (
-              <View key={item.key} style={styles.historyEntry}>              
+              <View key={item.key} style={styles.historyEntry}>
                 <Text style={styles.historyDate}>{new Date(item.date).toLocaleDateString()}</Text>
               </View>
             )}
@@ -243,59 +246,67 @@ class MainScreen extends Component {
           <View style={styles.titleContainer}>
             <Text style={styles.header}>T A C K L E B O X</Text>
           </View>
-          <View style={styles.dataContainer}>
+          <View style={[styles.dataContainer, { height: this.state.view === 'fishOn' ? hp('90%') : hp('78%') }]}>
             {this.state.view === 'start' ? start() : null}
             {this.state.view === 'fishing' ? fishing() : null}
             {this.state.view === 'pause' ? pause() : null}
             {this.state.view === 'end' ? end() : null}
             {this.state.view === 'history' ? history() : null}
+            {this.state.view === 'fishOn' ? <FishOn
+              sessionKey={this.state.currentSessionKey}
+              uid={this.state.uid}
+              confirmFish={() => { this.confirmFish() }}
+              onCancel={() => { this.setState({ view: "fishing" }) }} /> : null}
           </View>
-          <View style={styles.buttonNav}>
-            {/* This section features all the buttons for cycling through tabs. */}
+          {this.state.view != 'fishOn' ?
+            <View style={styles.buttonNav}>
+              {/* This section features all the buttons for cycling through tabs. */}
 
-            {/* Today Button */}
-            <AwesomeButton
-              height={hp('6%')}
-              width={wp('25%')}
-              alignItems={'center'}
-              backgroundColor={'#ffa012'}
-              backgroundDarker={'#ff9e1f'}
-              borderRadius={100}
-              textSize={16}
-              onPress={() => {
-              }}>
-              Today
+              {/* Today Button */}
+              <AwesomeButton
+                height={hp('6%')}
+                width={wp('25%')}
+                alignItems={'center'}
+                backgroundColor={'#ffa012'}
+                backgroundDarker={'#ff9e1f'}
+                borderRadius={100}
+                textSize={16}
+                onPress={() => {
+                  this.setState({ view: "start" })
+                }}>
+                Today
             </AwesomeButton>
 
-            {/* History button */}
-            <AwesomeButton
-              height={hp('6%')}
-              width={wp('25%')}
-              alignItems={'center'}
-              backgroundColor={'#ffa012'}
-              backgroundDarker={'#ff9e1f'}
-              borderRadius={100}
-              textSize={16}
-              onPress={() => { this.setState({ view: 'history' }) }}>
-              History
+              {/* History button */}
+              <AwesomeButton
+                height={hp('6%')}
+                width={wp('25%')}
+                alignItems={'center'}
+                backgroundColor={'#ffa012'}
+                backgroundDarker={'#ff9e1f'}
+                borderRadius={100}
+                textSize={16}
+                onPress={() => { this.setState({ view: 'history' }) }}>
+                History
             </AwesomeButton>
 
-            {/* Logout button */}
-            <AwesomeButton
-              height={hp('6%')}
-              width={wp('25%')}
-              alignItems={'center'}
-              backgroundColor={'#ffa012'}
-              backgroundDarker={'#ff9e1f'}
-              borderRadius={100}
-              textSize={16}
-              onPress={() => {
-              }}>
-              Logout
+              {/* Logout button */}
+              <AwesomeButton
+                height={hp('6%')}
+                width={wp('25%')}
+                alignItems={'center'}
+                backgroundColor={'#ffa012'}
+                backgroundDarker={'#ff9e1f'}
+                borderRadius={100}
+                textSize={16}
+                onPress={() => {
+                }}>
+                Logout
             </AwesomeButton>
 
-            {/* End of button tab container. */}
-          </View>
+              {/* End of button tab container. */}
+            </View> : null}
+
         </View>
       </View>
     );
@@ -330,7 +341,6 @@ const styles = StyleSheet.create({
   dataContainer: {
     width: '100%',
     padding: hp('2%'),
-    height: hp('78%'),
     alignItems: 'center'
   },
 

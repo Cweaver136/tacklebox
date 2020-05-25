@@ -33,10 +33,8 @@ class Login extends Component {
     if (this.state.email == '' || this.state.password == '') this.setState({ error: "Please fill out all fields.", loading: false, text: "LOGIN" })
     else {
       firebase.auth().signInWithEmailAndPassword(email, password).then(async data => {
-        let sessionInfo = await firebase.database().ref(`users/${data.user.uid}/sessions`).once('value').then(s => s.val())
         Actions.mainScreen({
           uid: data.user.uid,
-          sessions: sessionInfo
         });
       }).catch(err => {
         console.log(err)
