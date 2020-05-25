@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import { StyleSheet, View, Text, FlatList } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import AwesomeButton from 'react-native-really-awesome-button'
 import * as firebase from 'firebase';
 import prettyMS from 'pretty-ms';
 
-import FishOn from '../FishOn'
+import FishOn from '../FishOn';
+import HistoryView from '../HistoryView';
 
 class MainScreen extends Component {
 
@@ -121,7 +122,7 @@ class MainScreen extends Component {
 
     const fishing = () => {
       return (
-        <View style={styles.fishingView}>
+        <View style={styles.dataView}>
           <View style={styles.fishingInfo}>
             <View style={styles.infoSection}>
               <Text style={styles.textMain}>Fish Totals: {this.state.fishTotal}</Text>
@@ -161,7 +162,7 @@ class MainScreen extends Component {
 
     const pause = () => {
       return (
-        <View style={styles.fishingView}>
+        <View style={styles.dataView}>
           <View style={styles.fishingInfo}>
             <View style={styles.infoSection}>
               <Text style={styles.textMain}>Fish Totals: {this.state.fishTotal}</Text>
@@ -201,7 +202,7 @@ class MainScreen extends Component {
 
     const end = () => {
       return (
-        <View style={styles.fishingView}>
+        <View style={styles.dataView}>
           <View style={[styles.fishingInfo, { height: "36%" }]}>
             <View style={[styles.infoSection, { height: "100%" }]}>
               <Text style={styles.textMain}>Fish Totals: {this.state.fishTotal}</Text>
@@ -225,21 +226,6 @@ class MainScreen extends Component {
       )
     }
 
-    const history = () => {
-      return (
-        <View style={styles.historyView}>
-          <FlatList
-            data={this.state.sessions}
-            renderItem={({ item, index }) => (
-              <View key={item.key} style={styles.historyEntry}>
-                <Text style={styles.historyDate}>{new Date(item.date).toLocaleDateString()}</Text>
-              </View>
-            )}
-          />
-        </View>
-      )
-    }
-
     return (
       <View>
         <View style={styles.container}>
@@ -251,7 +237,8 @@ class MainScreen extends Component {
             {this.state.view === 'fishing' ? fishing() : null}
             {this.state.view === 'pause' ? pause() : null}
             {this.state.view === 'end' ? end() : null}
-            {this.state.view === 'history' ? history() : null}
+            {this.state.view === 'history' ? <HistoryView 
+            sessions={this.state.sessions}/> : null}
             {this.state.view === 'fishOn' ? <FishOn
               sessionKey={this.state.currentSessionKey}
               uid={this.state.uid}
@@ -272,7 +259,8 @@ class MainScreen extends Component {
                 borderRadius={100}
                 textSize={16}
                 onPress={() => {
-                  this.setState({ view: "start" })
+                  if (this.state.currentSessionKey) this.setState({view: "fishing"})
+                  else this.setState({ view: "start" })
                 }}>
                 Today
             </AwesomeButton>
@@ -349,8 +337,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1
   },
-
-  fishingView: {
+  dataView: {
     width: '100%',
     height: '100%',
   },
@@ -378,18 +365,6 @@ const styles = StyleSheet.create({
     padding: hp('2%'),
     alignItems: 'center',
   },
-
-  // HISTORY PAGE
-
-  historyEntry: {
-    width: '100%',
-    borderBottomColor: 'black',
-    borderBottomWidth: 2
-  },
-  historyDate: {
-    fontWeight: "bold"
-  },
-
 
   // FOOTER NAV
 

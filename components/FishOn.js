@@ -3,6 +3,7 @@ import { View, TextInput, Text, StyleSheet } from 'react-native';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import AwesomeButton from 'react-native-really-awesome-button';
 import * as firebase from 'firebase';
+import { CheckBox } from 'react-native-elements'
 
 export default class FishOn extends Component {
 
@@ -13,6 +14,7 @@ export default class FishOn extends Component {
       type: '',
       length: '',
       lure: '',
+      leader: false
 
     };
     console.ignoredYellowBox = [
@@ -54,8 +56,12 @@ export default class FishOn extends Component {
             <TextInput style={styles.input} placeholder={"Lure Used"} onChangeText={(lure) => this.setState({ lure: lure })}></TextInput>
           </View>
           <View style={styles.smInput}>
-            <Text style={styles.label}>Length:</Text>
-            <TextInput style={styles.input} placeholder={"Length"} onChangeText={(length) => this.setState({ length: length })}></TextInput>
+            <Text style={styles.label}>Leader?</Text>
+            <CheckBox 
+            title='' 
+            center 
+            checked={this.state.leader}
+            onPress={() => this.setState({leader: !this.state.leader})}></CheckBox>
           </View>
         </View>
         <View style={styles.buttonContainer}>
@@ -116,11 +122,11 @@ const styles = StyleSheet.create({
 
   medInput: {
     width: '50%',
-    margin: 5
+    margin: 10
   },
   smInput: {
     width: '25%',
-    margin: 5
+    margin: 10
   },
 
   input: {

@@ -1,0 +1,15 @@
+[] populate "history" with fish that have been caught
+    [] make this more detailed
+[] Logout function actually logs you out
+[] need to be able to edit details about a fish
+    [] need to add photo to a fish
+[] getting gps data about where you caught a fish
+[] get weather data for a fishing session
+[] session should merge if there are more than one on a given day
+    [] merge total time
+    [] merge fish caught
+[] Allow for feature to hide fishing records without any fish
+
+[x] Today view will just show the today stats
+[x] add a leader checkbox in add fish
+[x] add ability to "catch a fish"
