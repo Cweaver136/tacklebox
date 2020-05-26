@@ -16,6 +16,7 @@ class MainScreen extends Component {
       view: "start",
       time: 0,
       fishTotal: 0,
+      pause: false,
       uid: props.navigation.getParam("uid"),
       currentSessionKey: ''
     };
@@ -52,7 +53,7 @@ class MainScreen extends Component {
 
       newSessionRef.set({
         date: new Date().getTime(),
-      }).then(() => { this.setState({currentSessionKey: newSessionKey})})
+      }).then(() => { this.setState({ currentSessionKey: newSessionKey }) })
     }
     let time = this.state.view == 'end' ? 0 : this.state.time
     let start = this.state.view == 'end' ? Date.now() : Date.now() - this.state.time
@@ -62,6 +63,7 @@ class MainScreen extends Component {
       time: time,
       start: start,
       fishTotal: fishTotal,
+      pause: false
     })
     this.timer = setInterval(() => {
       this.setState({
@@ -72,12 +74,18 @@ class MainScreen extends Component {
   }
 
   pauseFishing() {
-    this.setState({ view: 'pause' });
+    this.setState({ 
+      view: 'pause',
+      pause: true
+    });
     clearInterval(this.timer);
   }
 
   resumeFishing() {
-    this.setState({ view: 'fishing' });
+    this.setState({ 
+      view: 'fishing',
+      pause: false
+    });
     this.startFishing();
   }
 
@@ -91,7 +99,11 @@ class MainScreen extends Component {
 
   endFishing() {
     // record fishing session
-    this.setState({ view: 'end' })
+    this.setState({
+      view: 'end',
+      currentSessionKey: '',
+      pause: false
+    })
     let sessionData = {
       time: this.state.time,
     }
@@ -237,8 +249,8 @@ class MainScreen extends Component {
             {this.state.view === 'fishing' ? fishing() : null}
             {this.state.view === 'pause' ? pause() : null}
             {this.state.view === 'end' ? end() : null}
-            {this.state.view === 'history' ? <HistoryView 
-            sessions={this.state.sessions}/> : null}
+            {this.state.view === 'history' ? <HistoryView
+              sessions={this.state.sessions} /> : null}
             {this.state.view === 'fishOn' ? <FishOn
               sessionKey={this.state.currentSessionKey}
               uid={this.state.uid}
@@ -259,7 +271,8 @@ class MainScreen extends Component {
                 borderRadius={100}
                 textSize={16}
                 onPress={() => {
-                  if (this.state.currentSessionKey) this.setState({view: "fishing"})
+                  if (this.state.pause) this.setState({view: "pause"});
+                  else if (this.state.currentSessionKey) this.setState({ view: "fishing" })
                   else this.setState({ view: "start" })
                 }}>
                 Today

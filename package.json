@@ -24,7 +24,8 @@
     "react-native-screens": "^2.7.0",
     "react-native-web": "~0.11.7",
     "react-navigation": "^4.3.9",
-    "save": "^2.4.0"
+    "save": "^2.4.0",
+    "expo-location": "~8.1.0"
   },
   "devDependencies": {
     "babel-preset-expo": "~8.1.0",

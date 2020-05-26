@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Alert } from 'react-native';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import AwesomeButton from 'react-native-really-awesome-button';
 import * as firebase from 'firebase';
 import { CheckBox } from 'react-native-elements'
+import * as Location from 'expo-location';
 
 export default class FishOn extends Component {
 
@@ -14,7 +15,8 @@ export default class FishOn extends Component {
       type: '',
       length: '',
       lure: '',
-      leader: false
+      leader: false,
+      location: ''
 
     };
     console.ignoredYellowBox = [
@@ -25,18 +27,29 @@ export default class FishOn extends Component {
   }
 
   componentDidMount() {
-    console.log(this.props)
   }
-  addFish() {
-    if (this.state.type == '' || this.state.lure == '' || this.state.length == '') {}
-    else if (!/^[0-9]*$/.test(this.state.length)) {}
+  async addFish() {
+    if (this.state.type == '' || this.state.lure == '' || this.state.length == '') { }
+    else if (!/^\d*\.?\d*$/.test(this.state.length)) { }
 
     else {
-      firebase.database().ref(`users/${this.props.uid}/sessions/${this.props.sessionKey}/fishCaught`).push({
-        type: this.state.type,
-        lure: this.state.lure,
-        length: this.state.length
-      }).then(this.props.confirmFish)
+      let status = await Location.getPermissionsAsync();
+      if (status.status === 'granted') {
+        let location = await Location.getCurrentPositionAsync({accuracy: 5});
+        let coords = {
+          lat: location.coords.latitude,
+          lng: location.coords.longitude
+        }
+        firebase.database().ref(`users/${this.props.uid}/sessions/${this.props.sessionKey}/fishCaught`).push({
+          type: this.state.type,
+          lure: this.state.lure,
+          length: this.state.length,
+          leader: this.state.leader ? true : null,
+          coords: coords
+        }).then(this.props.confirmFish).catch(error => {
+          Alert.alert(error)
+        })
+      }
     }
   }
   render() {
@@ -57,11 +70,11 @@ export default class FishOn extends Component {
           </View>
           <View style={styles.smInput}>
             <Text style={styles.label}>Leader?</Text>
-            <CheckBox 
-            title='' 
-            center 
-            checked={this.state.leader}
-            onPress={() => this.setState({leader: !this.state.leader})}></CheckBox>
+            <CheckBox
+              title=''
+              center
+              checked={this.state.leader}
+              onPress={() => this.setState({ leader: !this.state.leader })}></CheckBox>
           </View>
         </View>
         <View style={styles.buttonContainer}>
