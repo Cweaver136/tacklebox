@@ -18,7 +18,8 @@ class MainScreen extends Component {
       fishTotal: 0,
       pause: false,
       uid: props.navigation.getParam("uid"),
-      currentSessionKey: ''
+      currentSessionKey: '',
+      flowData: 0
     };
 
     this.startFishing = this.startFishing.bind(this);
@@ -51,10 +52,22 @@ class MainScreen extends Component {
       let newSessionKey = firebase.database().ref(`users/${this.state.uid}/sessions`).push().key
       let newSessionRef = firebase.database().ref(`users/${this.state.uid}/sessions/${newSessionKey}`)
 
-      newSessionRef.set({
-        date: new Date().getTime(),
-      }).then(() => { this.setState({ currentSessionKey: newSessionKey }) })
+      let waterData = {}
+      fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json())
+        .then(data => {
+          waterData.flowRate = data.value.timeSeries[0].values[0].value[0].value;
+
+          newSessionRef.set({
+            date: new Date().getTime(),
+          }).then(() => {
+            this.setState({
+              currentSessionKey: newSessionKey,
+              flowData:   waterData.flowRate
+            })
+          })
+        });
     }
+
     let time = this.state.view == 'end' ? 0 : this.state.time
     let start = this.state.view == 'end' ? Date.now() : Date.now() - this.state.time
     let fishTotal = this.state.view == 'end' ? 0 : this.state.fishTotal
@@ -74,7 +87,7 @@ class MainScreen extends Component {
   }
 
   pauseFishing() {
-    this.setState({ 
+    this.setState({
       view: 'pause',
       pause: true
     });
@@ -82,7 +95,7 @@ class MainScreen extends Component {
   }
 
   resumeFishing() {
-    this.setState({ 
+    this.setState({
       view: 'fishing',
       pause: false
     });
@@ -98,16 +111,28 @@ class MainScreen extends Component {
   }
 
   endFishing() {
-    // record fishing session
-    this.setState({
-      view: 'end',
-      currentSessionKey: '',
-      pause: false
-    })
     let sessionData = {
       time: this.state.time,
+      waterData: {}
     }
-    firebase.database().ref(`users/${this.state.uid}/sessions/${this.state.currentSessionKey}`).update(sessionData)
+
+    fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json())
+      .then(data => {
+        var endFlowData = data.value.timeSeries[0].values[0].value[0].value;
+        sessionData.waterData.flowRate = (parseInt(endFlowData) + parseInt(this.state.flowData)) / 2
+        sessionData.waterData.location = {
+          lat: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.latitude,
+          lng: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.longitude
+        }
+        firebase.database().ref(`users/${this.state.uid}/sessions/${this.state.currentSessionKey}`).update(sessionData).then(() => {
+          this.setState({
+            flowData: 0,
+            view: 'end',
+            currentSessionKey: '',
+            pause: false
+          })
+        })
+      });
   }
 
   render() {
@@ -271,7 +296,7 @@ class MainScreen extends Component {
                 borderRadius={100}
                 textSize={16}
                 onPress={() => {
-                  if (this.state.pause) this.setState({view: "pause"});
+                  if (this.state.pause) this.setState({ view: "pause" });
                   else if (this.state.currentSessionKey) this.setState({ view: "fishing" })
                   else this.setState({ view: "start" })
                 }}>
