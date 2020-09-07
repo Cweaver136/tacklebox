@@ -1,15 +1,45 @@
-[] populate "history" with fish that have been caught
-    [] make this more detailed
-[] Logout function actually logs you out
-[] need to be able to edit details about a fish
-    [] need to add photo to a fish
-[] getting gps data about where you caught a fish
 [] get weather data for a fishing session
-[] session should merge if there are more than one on a given day
-    [] merge total time
-    [] merge fish caught
-[] Allow for feature to hide fishing records without any fish
+    [] beginning and end temps and then average
 
-[x] Today view will just show the today stats
-[x] add a leader checkbox in add fish
-[x] add ability to "catch a fish"
+    [] provide prompt to pick which creek you're fishing
+    
+    [] session should merge if there are more than one on a given day
+        [] merge total time
+        [] merge fish caught
+
+MAKE THIS WHOLE THING A WEB APP
+[] when you catch a fish and add a lure, you should add to a whole big list that allows you to then filter when you're typing in a lure the next time
+
+Mobile app that literally just does the tracking. 
+
+Then a web app that allows you to look at all the data.
+
+users
+    7yqpcbSpNogEzdE2g6fJf6ejUAB3
+        email: "cweaver136@gmail.com"
+        first_name: "Caleb"
+        last_name: "Weaver"
+        sessions
+            -M8IjMn61lHKrkdlFLW9
+                date: 1590542823933
+                fishCaught
+                    -M8IjPTxeQtp03vLuH3T
+                time: 12243
+                waterData
+                    flowRate: 289
+                    location
+                        lat: 40.22481237
+                        lng: -76.8980293
+
+
+fish (this should be where all the data is stored)
+    UID - 7yqpcbSpNogEzdE2g6fJf6ejUAB3
+        -M8IjPTxeQtp03vLuH3T
+            coords
+                lat: 37.4219983
+                lng: -122.084
+                leader: true
+                length: "12"
+                lure: "white magnet"
+                type: "brown trout"
+

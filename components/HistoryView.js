@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { View, FlatList, Text, StyleSheet } from 'react-native';
-import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import * as firebase from 'firebase';
 import { titleCase } from './helpers/helpers';
+import prettyMS from 'pretty-ms';
 
 export default class HistoryView extends Component {
 
