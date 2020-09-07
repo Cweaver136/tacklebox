@@ -1,5 +1,7 @@
 import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
 
+import '../login-element/login-element.js'
+
 import '@polymer/paper-button/paper-button.js';
 import '@polymer/paper-input/paper-input.js';
 
@@ -34,20 +36,18 @@ class TackeleboxMobile extends PolymerElement {
        .input {
          width: 250px;
        }
-       #submitButton {
+       .button {
          background-color: #ffa012;
          border-radius: 50px;
          width: 100px;
          margin: 20px;
        }
+       .flex-row {
+         display: flex;
+       }
       </style>
       <div id="pageContent">
-        <h1 id="title">Tacklebox Fishing</h1>
-        <div id="loginForm">
-          <paper-input class="input" value="{{formEmail}}" placeholder="email"></paper-input>
-          <paper-input class="input" value="{{formPassword}}" placeholder="password"></paper-input>
-          <paper-button id="submitButton">Login</paper-button>
-        </div>
+        <login-element></login-element>
       </div>
     `;
   }
@@ -55,6 +55,12 @@ class TackeleboxMobile extends PolymerElement {
   static get is() { return 'tacklebox-mobile'; }
   static get properties() {
     return {
+      password: {
+        type: String,
+      },
+      email: {
+        type: String,
+      }
     };
   }
   static get observers() {
@@ -63,6 +69,30 @@ class TackeleboxMobile extends PolymerElement {
   }
   ready() {
     super.ready();
+  }
+  submitLogin() {
+    if (password != '' && email != '') {
+      firebase.auth().signInWithEmailAndPassword(email, password).then(async data => {
+        
+      }).catch(err => {
+        console.log(err)
+        this.setState({ error: 'The Email or Password you have entered is incorrect!', loading: false, text: 'LOGIN' })
+      })
+    }
+  }
+  submitRegistration() {
+    let emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (password.length > 6 && email!= '' && !emailReg.test(email)) {
+      firebase.auth().createUserWithEmailAndPassword(email, password).then(snapshot => {
+        firebase.database().ref('users/' + snapshot.user.uid).set({
+          email
+        })
+      }).catch(error => {
+        console.log(error)
+        if (error.code == 'auth/email-already-in-use') this.setState({ error: 'Email already in use.', loading: false, text: 'REGISTER' })
+        else this.setState({ error: 'Regsitration Failed', loading: false, text: 'REGISTER' })
+      })
+    }
   }
 }
 customElements.define(TackeleboxMobile.is, TackeleboxMobile);
