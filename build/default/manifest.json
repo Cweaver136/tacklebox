@@ -1,0 +1,7 @@
+{
+  "name": "tacklebox",
+  "short_name": "tacklebox",
+  "description": "Fishing tracker",
+  "start_url": "/",
+  "display": "standalone"
+}
