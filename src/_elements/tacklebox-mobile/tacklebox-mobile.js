@@ -9,11 +9,11 @@ class TackeleboxMobile extends PolymerElement {
   static get template() {
     return html`
       <style>
-      :host {
-        display: flex;
-        font-family: var(--paper-font-title_-_font-family)
-      }
-       #pageContent {
+        :host {
+          display: flex;
+          font-family: var(--paper-font-title_-_font-family)
+        }
+        #pageContent {
         display: flex;
         flex-direction: column;
         padding: 20px;      
@@ -22,44 +22,47 @@ class TackeleboxMobile extends PolymerElement {
         flex: 1;
         align-items: center;
         justify-content: center;
-       }
-       #title {
-         flex: 1;
-         color: #15b9ff
-       }
-       #loginForm {
-         display: flex;
-         flex-direction: column;
-         justify-content: center;
-         align-items: center
-       }
-       .input {
-         width: 250px;
-       }
-       .button {
-         background-color: #ffa012;
-         border-radius: 50px;
-         width: 100px;
-         margin: 20px;
-       }
-       .flex-row {
-         display: flex;
-       }
+        }
+        #title {
+          flex: 1;
+          color: #15b9ff
+        }
+        #loginForm {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center
+        }
+        .input {
+          width: 250px;
+        }
+        .button {
+          background-color: #ffa012;
+          border-radius: 50px;
+          width: 100px;
+          margin: 20px;
+        }
+        .flex-row {
+          display: flex;
+        }
+        login-element[hidden] {
+          
+        }
       </style>
-      <div id="pageContent">
-        <login-element></login-element>
-      </div>
+      <login-element hidden\$="[[hasUser(user.*)]]" style="flex: 1" user="{{user}}"></login-element>
+      <template is="dom-if" if="{{user}}">
+        <div></div>
+       <span>Hello World!</span>
+      </template>
     `;
   }
 
   static get is() { return 'tacklebox-mobile'; }
   static get properties() {
     return {
-      password: {
-        type: String,
-      },
-      email: {
-        type: String,
+      user: {
+        type: Object,
+        notify: true,
       }
     };
   }
@@ -70,29 +73,10 @@ class TackeleboxMobile extends PolymerElement {
   ready() {
     super.ready();
   }
-  submitLogin() {
-    if (password != '' && email != '') {
-      firebase.auth().signInWithEmailAndPassword(email, password).then(async data => {
-        
-      }).catch(err => {
-        console.log(err)
-        this.setState({ error: 'The Email or Password you have entered is incorrect!', loading: false, text: 'LOGIN' })
-      })
-    }
-  }
-  submitRegistration() {
-    let emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (password.length > 6 && email!= '' && !emailReg.test(email)) {
-      firebase.auth().createUserWithEmailAndPassword(email, password).then(snapshot => {
-        firebase.database().ref('users/' + snapshot.user.uid).set({
-          email
-        })
-      }).catch(error => {
-        console.log(error)
-        if (error.code == 'auth/email-already-in-use') this.setState({ error: 'Email already in use.', loading: false, text: 'REGISTER' })
-        else this.setState({ error: 'Regsitration Failed', loading: false, text: 'REGISTER' })
-      })
-    }
+  hasUser() {
+    console.log(this.user)
+    if (this.user) return true;
+    else return false;
   }
 }
 customElements.define(TackeleboxMobile.is, TackeleboxMobile);

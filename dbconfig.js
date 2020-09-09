@@ -1,4 +1,3 @@
-import * as firebase from 'firebase'
 
 firebase.initializeApp({
     apiKey: "AIzaSyBLLj1uItG4wEm9dF9DzOUgYGNcM8TTo4Y",

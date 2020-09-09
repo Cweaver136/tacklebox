@@ -11,7 +11,7 @@ class LoginElement extends PolymerElement {
         display: flex;
         font-family: var(--paper-font-title_-_font-family)
       }
-       #pageContent {
+       #content {
         display: flex;
         flex-direction: column;
         padding: 20px;      
@@ -34,26 +34,35 @@ class LoginElement extends PolymerElement {
        .input {
          width: 250px;
        }
-       .button {
+       .buttonConfirm {
          background-color: #ffa012;
          border-radius: 50px;
          width: 100px;
          margin: 20px;
        }
+       .buttonCancel {
+          background-color: lightgray;
+          border-radius: 50px;
+          width: 100px;
+          margin: 20px;
+       }
        .flex-row {
          display: flex;
        }
       </style>
+      <div id="content">
         <h1 id="title">Tacklebox Fishing</h1>
-        <h3>Login / Register</h3>
+        <h3>{{actionButtonText}}</h3>
         <div id="loginForm">
           <paper-input class="input" value="{{formEmail}}" placeholder="email"></paper-input>
-          <paper-input class="input" value="{{formPassword}}" placeholder="password"></paper-input>
-          <div class="flex-row">
-            <paper-button class="button" on-tap="submitLogin">Login</paper-button>
-            <paper-button class="button" on-tap="submitRegistration">Register</paper-button>
+          <paper-input class="input" type="password" value="{{formPassword}}" placeholder="password"></paper-input>                    
+          <div class="flex-row">          
+            <paper-button hidden\$="[[equal(actionButtonText, 'Login')]]" class="buttonCancel" on-tap="switchActionButton">Cancel</paper-button>
+            <paper-button class="buttonConfirm" on-tap="submitAction">{{actionButtonText}}</paper-button>
           </div>
+          <span hidden\$="[[equal(actionButtonText, 'Register')]]" style="text-decoration: underline; cursor: pointer" on-click="switchActionButton">Register Account</span>
         </div>
+      </div>      
     `;
   }
 
@@ -65,6 +74,14 @@ class LoginElement extends PolymerElement {
       },
       email: {
         type: String,
+      },
+      user: {
+        type: Object,
+        notify: true,
+      },
+      actionButtonText: {
+        type: String,
+        value: 'Login'
       }
     };
   }
@@ -74,30 +91,40 @@ class LoginElement extends PolymerElement {
   }
   ready() {
     super.ready();
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) this.set('user', user);
+    })
   }
-  submitLogin() {
-    if (password != '' && email != '') {
-      firebase.auth().signInWithEmailAndPassword(email, password).then(async data => {
-        
-      }).catch(err => {
-        console.log(err)
-        this.setState({ error: 'The Email or Password you have entered is incorrect!', loading: false, text: 'LOGIN' })
-      })
+  equal(a, b) {
+    return a == b;
+  }
+  switchActionButton() {
+    if (this.actionButtonText == 'Login') this.set('actionButtonText', 'Register');
+    else if (this.actionButtonText == 'Register') this.set('actionButtonText', 'Login');
+  }
+  submitAction() {
+    if (this.actionButtonText == 'Login') {
+      if (this.formPassword != '' && this.formEmail != '') {
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+            return firebase.auth().signInWithEmailAndPassword(this.formEmail, this.formPassword)
+          })
+          .catch(function(err) {
+            console.log(err)
+          });
+      }
     }
-  }
-  submitRegistration() {
-    let emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (password.length > 6 && email!= '' && !emailReg.test(email)) {
-      firebase.auth().createUserWithEmailAndPassword(email, password).then(snapshot => {
-        firebase.database().ref('users/' + snapshot.user.uid).set({
-          email
+    else if (this.actionButtonText == 'Register') {
+      let emailReg = /^[^@]+@[^@]+\.[^@]+$/;
+      if (this.formPassword.length > 6 && this.formEmail!= '' && emailReg.test(this.formEmail)) {
+        firebase.auth().createUserWithEmailAndPassword(this.formEmail, this.formPassword).then(snapshot => {
+          firebase.database().ref('users/' + snapshot.user.uid).set({email : this.formEmail})
+          this.set('actionButtonText', 'Login');
+        }).catch(error => {
+          console.log(error)
         })
-      }).catch(error => {
-        console.log(error)
-        if (error.code == 'auth/email-already-in-use') this.setState({ error: 'Email already in use.', loading: false, text: 'REGISTER' })
-        else this.setState({ error: 'Regsitration Failed', loading: false, text: 'REGISTER' })
-      })
-    }
+      }
+    }    
   }
 }
 customElements.define(LoginElement.is, LoginElement);
