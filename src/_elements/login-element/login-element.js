@@ -7,22 +7,23 @@ class LoginElement extends PolymerElement {
   static get template() {
     return html`
       <style>
-      :host {
-        display: flex;
-        font-family: var(--paper-font-title_-_font-family)
-      }
+        :host {
+          flex-direction: column;
+          align-items: center;
+          display: flex;
+          font-family: var(--paper-font-title_-_font-family)
+        }
        #content {
-        display: flex;
-        flex-direction: column;
-        padding: 20px;      
-        border-radius: 10px;
-        border: 1px solid lightgray;
-        flex: 1;
-        align-items: center;
-        justify-content: center;
+          display: flex;
+          flex-direction: column;
+          margin: 10px;      
+          border-radius: 10px;
+          border: 1px solid lightgray;
+          flex: 1;
+          align-items: center;
+          justify-content: center;
        }
        #title {
-         flex: 1;
          color: #15b9ff
        }
        #loginForm {
@@ -50,19 +51,17 @@ class LoginElement extends PolymerElement {
          display: flex;
        }
       </style>
-      <div id="content">
-        <h1 id="title">Tacklebox Fishing</h1>
-        <h3>{{actionButtonText}}</h3>
-        <div id="loginForm">
-          <paper-input class="input" value="{{formEmail}}" placeholder="email"></paper-input>
-          <paper-input class="input" type="password" value="{{formPassword}}" placeholder="password"></paper-input>                    
-          <div class="flex-row">          
-            <paper-button hidden\$="[[equal(actionButtonText, 'Login')]]" class="buttonCancel" on-tap="switchActionButton">Cancel</paper-button>
-            <paper-button class="buttonConfirm" on-tap="submitAction">{{actionButtonText}}</paper-button>
-          </div>
-          <span hidden\$="[[equal(actionButtonText, 'Register')]]" style="text-decoration: underline; cursor: pointer" on-click="switchActionButton">Register Account</span>
+      <h1 id="title">Tacklebox Fishing</h1>
+      <h3>{{actionButtonText}}</h3>
+      <div id="loginForm">
+        <paper-input class="input" value="{{formEmail}}" placeholder="email"></paper-input>
+        <paper-input class="input" type="password" value="{{formPassword}}" placeholder="password"></paper-input>                    
+        <div class="flex-row">          
+          <paper-button hidden\$="[[equal(actionButtonText, 'Login')]]" class="buttonCancel" on-tap="switchActionButton">Cancel</paper-button>
+          <paper-button class="buttonConfirm" on-tap="submitAction">{{actionButtonText}}</paper-button>
         </div>
-      </div>      
+        <span hidden\$="[[equal(actionButtonText, 'Register')]]" style="text-decoration: underline; cursor: pointer" on-click="switchActionButton">Register Account</span>
+      </div>
     `;
   }
 
