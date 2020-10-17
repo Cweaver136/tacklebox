@@ -51,7 +51,9 @@ class LoginElement extends PolymerElement {
          display: flex;
        }
       </style>
-      <h1 id="title">Tacklebox Fishing</h1>
+      <template is="dom-if" if="{{isMobile}}">
+        <h1 id="title">Tacklebox Fishing</h1>
+      </template>
       <h3>{{actionButtonText}}</h3>
       <div id="loginForm">
         <paper-input class="input" value="{{formEmail}}" placeholder="email"></paper-input>
@@ -81,6 +83,12 @@ class LoginElement extends PolymerElement {
       actionButtonText: {
         type: String,
         value: 'Login'
+      },
+      isMobile: {
+        type: Boolean,
+        value: () => {
+          return window.location.href.includes('mobile')
+        }
       }
     };
   }
@@ -93,6 +101,7 @@ class LoginElement extends PolymerElement {
 
     firebase.auth().onAuthStateChanged(user => {
       if (user) this.set('user', user);
+      else this.set('user', null);
     })
   }
   equal(a, b) {

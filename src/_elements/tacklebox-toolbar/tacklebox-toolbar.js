@@ -1,7 +1,8 @@
 import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
 import '../../helpers/style-modules/flex-styles'
-import '@polymer/paper-button/paper-button.js';
 import '@polymer/paper-input/paper-input.js';
+import '@polymer/paper-icon-button/paper-icon-button.js';
+import '@polymer/iron-icons/iron-icons.js';
 
 class TackleboxToolbar extends PolymerElement {
   static get template() {
@@ -23,6 +24,9 @@ class TackleboxToolbar extends PolymerElement {
       </style>
       <div class="flex-row-center" id="navbar">
         <h3 class="headerColor">T A C K L E B O X</h3>
+        <template is="dom-if" if="{{user}}">
+          <paper-icon-button class="headerColor" icon="icons:input" on-tap="logout"></paper-icon-button>
+        </template>
       </div>
     `;
   }
@@ -34,10 +38,6 @@ class TackleboxToolbar extends PolymerElement {
         type: Object,
         notify: true,
       },
-      selectedView: {
-        type: String,
-        value: 'start'
-      }
     };
   }
   static get observers() {
@@ -46,6 +46,11 @@ class TackleboxToolbar extends PolymerElement {
   }
   ready() {
     super.ready();
+  }
+  logout() {
+    if (this.user) {
+      firebase.auth().signOut();
+    }
   }
 }
 customElements.define(TackleboxToolbar.is, TackleboxToolbar);
