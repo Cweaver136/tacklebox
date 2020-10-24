@@ -1,14 +1,12 @@
 import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
 
 import '../login-element/login-element.js'
-
-import '@polymer/paper-button/paper-button.js';
-import '@polymer/paper-input/paper-input.js';
+import '../../helpers/style-modules/flex-styles'
 
 class TackeleboxMobile extends PolymerElement {
   static get template() {
     return html`
-      <style>
+      <style include="flex-styles">
         :host {
           height: 100%;
           display: flex;
@@ -21,8 +19,8 @@ class TackeleboxMobile extends PolymerElement {
           color: white;
           font-size: 22px;
           border-radius: 100px;
-          height: 200px;
-          width: 200px;
+          height: 150px;
+          width: 150px;
         }
         #content {
           display: flex;
@@ -56,12 +54,17 @@ class TackeleboxMobile extends PolymerElement {
         .flex-row {
           display: flex;
         }
-        #mainStuff {
+        #mainContainer {
+          display: flex;
           flex-direction: column;
           flex: 1;
           display: flex;
           width: 100%;
           align-items: center
+        }
+        #mainContainer > .contentContainer {
+          flex: 1;
+          width: 100%;
         }
         #appHeader {
           border-bottom: 1px solid lightgray;
@@ -71,15 +74,11 @@ class TackeleboxMobile extends PolymerElement {
           text-align: center;
           width: 100%
         }
-        #start {
-          flex: .8;
-          display: flex;
-          align-items: center;
-        }
-        #inProgress {
-          display: flex;
-          flex: .8;
-          width: 100%;
+        .button[disabled] {
+          background-color: white;
+          border: 1px solid lightgray;
+          color: black;
+          opacity: .6
         }
         #buttons {
           border-top: 1px solid lightgray;
@@ -88,19 +87,7 @@ class TackeleboxMobile extends PolymerElement {
         #title {
           color: #15b9ff
         }
-        login-element[hidden] {
-          display: none;
-        }
-        #start[hidden] {
-          display: none;
-        }
-        #inProgress[hidden] {
-          display: none;
-        }
-        #paused[hidden] {
-          display: none;
-        }
-        #end[hidden] {
+        [hidden] {
           display: none;
         }
       </style>
@@ -110,21 +97,31 @@ class TackeleboxMobile extends PolymerElement {
           <div id="appHeader">
             <h1 id="title">Tacklebox</h1>
           </div>
-          <div id="mainStuff">
-            <div hidden\$="[[!equal(selectedView, 'start')]]" id="start">
-              <paper-button class="orangeButton" id="fishingButton" on-tap="startFishing">Let's Fish</paper-button>
+          <div id="mainContainer">
+            <div class="contentContainer flex-col-center-vh" hidden\$="[[!equal(selectedView, 'start')]]" id="start">
+              <span>Pick your body of water</span>
+              <paper-dropdown-menu label="Body of Water" vertical-offset="55" style="margin: 30px 0px 50px 0px;">
+                <paper-listbox slot="dropdown-content" selected="{{selectedBOW}}">
+                  <template is="dom-repeat" items="{{bodiesOfWater}}">
+                    <paper-item>{{item}}</paper-item>
+                  </template>
+                </paper-listbox>
+              </paper-dropdown-menu>
+              <paper-button class="button orangeButton" disabled="{{!canStartFishing}}" id="fishingButton" on-tap="startFishing">Let's Fish</paper-button>
             </div>
-            <div hidden\$="[[!equal(selectedView, 'inProgress')]]" id="inProgress">
+            <div class="contentContainer flex-col" hidden\$="[[!equal(selectedView, 'inProgress')]]" id="inProgress">
               <div id="fishingOverview">
                 <h3>Time: {{timeElapsed}}</h3>
-                <h3>Fish Caught: {{totalFishCaught}}</h3>
+                <h3>Fish Caught: {{numFishCaught}}</h3>
               </div>
             </div>
-            <div hidden\$="[[!equal(selectedView, 'paused')]]" id="paused"></div>
-            <div hidden\$="[[!equal(selectedView, 'end')]]" id="end"></div>
-            </div>
+            <div class="contentContainer" hidden\$="[[!equal(selectedView, 'paused')]]" id="paused"></div>
+            <div class="contentContainer" hidden\$="[[!equal(selectedView, 'end')]]" id="end"></div>
           <div>
-          <div id="buttons"></div>
+          <div id="buttons" hidden\$="[[equal(selectedView, 'start')]]">
+            <paper-button on-tap="changePage" class="button">Pause</paper-button>
+            <paper-button disabled="{{!canContinue}}" class="button" on-tap="endFishing">End</paper-button>
+          </div>
         </template>
       </div>
     `;
@@ -140,26 +137,110 @@ class TackeleboxMobile extends PolymerElement {
       selectedView: {
         type: String,
         value: 'start'
+      },
+      canStartFishing: {
+        type: Boolean,
+        value: false
+      },
+      numFishCaught: {
+        type: Number,
+        value: 0,
+      },
+      sessionTimer: {
+        type: Number,
+        value: 0
+      },
+      bodiesOfWater: {
+        type: Array,
+        value: [
+          'Conewago Creek',
+          'Susquehanna River',
+          'Yellow Breeches Creek'
+        ]
       }
     };
   }
   static get observers() {
     return [
+      'calcStartFishing(selectedBOW.*)'
     ]
   }
   ready() {
     super.ready();
   }
   equal(a, b) {
+    console.log(a, b)
     return a == b;
   }
   hasUser() {
-    console.log(this.user)
     if (this.user) return true;
     else return false;
   }
+  calcStartFishing() {
+    if (this.bodiesOfWater[this.selectedBOW]) this.canStartFishing = true;
+    else return this.canStartFishing = false;
+  }
   startFishing() {
     this.switchView('inProgress');
+    let key = firebase.database().ref(`users/${this.user.uid}/sessions`).push().key
+    let update = {}
+    let lat;
+    let long;
+    // get location of starting spot
+    navigator.geolocation.getCurrentPosition(function(location) {
+      lat = location.coords.latitude,
+      long = location.coords.longitude
+    });
+    
+
+    let waterData = {}
+    fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json()).then(data => {
+      waterData.flowRate = data.value.timeSeries[0].values[0].value[0].value;
+      update['users/' + this.user.uid + '/sessions/' + key] = true;
+      update['sessions/' + key] = {
+        uid: this.user.uid,
+        date: new Date().getTime(),
+        body_of_water: this.bodiesOfWater[this.selectedBOW],
+        start_location: {
+          lat,
+          long
+        }
+      }
+      firebase.database().ref().update(update).then(() => {
+        this.set('sessionId', key)
+      }).catch(e => {
+        console.log(e)
+      })
+    });
+  }
+  endFishing() {
+    let update = {};
+    let lat;
+    let long;
+    // get location of starting spot
+    navigator.geolocation.getCurrentPosition(function(location) {
+      lat = location.coords.latitude,
+      long = location.coords.longitude
+    });
+
+    let waterData = {}
+    fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json()).then(data => {
+      var endFlowData = data.value.timeSeries[0].values[0].value[0].value;
+      // waterData.flowRate = (parseInt(endFlowData) + parseInt(this.state.flowData)) / 2
+      waterData.location = {
+        lat: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.latitude,
+        lng: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.longitude
+      }
+      update['end_location'] = {
+        lat,
+        long
+      }
+      firebase.database().ref(`sessions/${this.sessionId}`).update(update).then(() => {
+        this.sessionId = null;
+        this.numFishCaught = 0;
+        this.selectedView = 'end'
+      })
+    });
   }
   switchView(target) {
     this.set('selectedView', target);

@@ -23,6 +23,11 @@ $_documentContainer.innerHTML = `<dom-module id="flex-styles">
           display: flex;
           align-items: center;
           flex-direction: column;
+          justify-content: center;
+        }
+        .flex-col {
+          display: flex;
+          flex-direction: column
         }
     </style>
   </template>

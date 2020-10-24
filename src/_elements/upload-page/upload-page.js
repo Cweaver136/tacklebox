@@ -3,12 +3,7 @@ import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
 import '../tacklebox-toolbar/tacklebox-toolbar'
 import '../login-element/login-element'
 import '../../helpers/style-modules/flex-styles'
-import '@polymer/paper-button/paper-button.js';
-import '@polymer/paper-input/paper-input.js';
-import '@polymer/paper-dropdown-menu/paper-dropdown-menu.js';
-import '@polymer/paper-item/paper-item.js';
-import '@polymer/paper-listbox/paper-listbox.js';
-import { findObservedAttributesGetter } from '@polymer/polymer/lib/mixins/disable-upgrade-mixin';
+import '../../helpers/widgets/toArray'
 
 class UploadPage extends PolymerElement {
   static get template() {
@@ -33,7 +28,7 @@ class UploadPage extends PolymerElement {
           margin-top: 50px;
         }
         .button {
-          background-color: #0f7173;
+          background-color: #fe7f2d;
           border-radius: 20px;
           margin: 1em;
           color: white
@@ -55,6 +50,9 @@ class UploadPage extends PolymerElement {
           transition: all 2s;
         }
       </style>
+      <firebase-app api-key=""></firebase-app>
+      <firebase-document path="/sessions" data="{{fishingSessions}}"></firebase-document>
+      <firebase-document path="/users/{{user.uid}}/sessions" data="{{userFishingSessions}}"></firebase-document>
       <tacklebox-toolbar user="{{user}}"></tacklebox-toolbar>
       <login-element hidden\$="[[hasUser(user.*)]]" user="{{user}}"></login-element>
       <template is="dom-if" if="{{user}}">
@@ -98,18 +96,21 @@ class UploadPage extends PolymerElement {
       pageIndex: {
         type: Number,
         value: 1
+      },
+      userFishingSessions: {
+        type: Array,
       }
     };
   }
   static get observers() {
     return [
+      'filterFishingSessions(fishingSessions.*)'
     ]
   }
   ready() {
     super.ready();
   }
   hasUser() {
-    console.log(this.user)
     if (this.user) return true;
     else return false;
   }
@@ -119,6 +120,10 @@ class UploadPage extends PolymerElement {
   changePage(e) {
     if (this.pageIndex == 1) this.pageIndex = 0;
     else if (this.pageIndex == 0) this.pageIndex = 1;
+  }
+  filterFishingSessions() {
+    let sessions = k.toArray(this.fishingSessions);
+    console.log(sessions)
   }
 }
 customElements.define(UploadPage.is, UploadPage);

@@ -14,12 +14,12 @@ class TackleboxToolbar extends PolymerElement {
           font-family: var(--paper-font-title_-_font-family)
         }
         #navbar {
-            background-color: #272932;
+            background-color: #233d4d;
             width: 100%;
             margin: 0px;
         }
         .headerColor {
-            color: #e7ecef;
+            color: #fcca46;
         }
       </style>
       <div class="flex-row-center" id="navbar">
