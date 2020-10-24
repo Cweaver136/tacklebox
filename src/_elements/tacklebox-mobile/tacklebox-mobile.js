@@ -90,7 +90,30 @@ class TackeleboxMobile extends PolymerElement {
         [hidden] {
           display: none;
         }
+        #confirmDialog {
+          borde-radius: 25px;
+        }
       </style>
+
+      <paper-dialog id="confirmDialog" layered="false" entry-animation="scale-up-animation" exit-animation="fade-out-animation" on-iron-overlay-canceled="cancelPromptAction" opened="{{confirmDialogOpened}}">
+        <h2>{{confirmDialogHeading}}</h2>
+        <div style="display:table; min-height:138px; width:calc(100% - 48px);">
+          <span id="confirmBody" style="display:table-cell; vertical-align:middle;">
+            <span id="confirmDialogBody"></span>
+            <!--Dialog Templates-->
+            <template is="dom-if" if="{{equal(confirmDialogBodyType, '')}}">
+            </template>
+          </span>
+        </div>
+        <div class="buttons">
+          <paper-button on-tap="cancelPromptAction" style\$="{{confirmDialogDismissiveStyle}}" dialog-dismiss="" outline="">{{confirmDialogDismissiveText}}</paper-button>
+          <template is="dom-repeat" items="[[confirmDialogOtherButtons]]">
+            <paper-button on-tap="confirmDialogButtonCallback" dialog-confirm="" outline="" disabled\$="[[item.disabled]]" style\$="[[item.style]]">[[item.text]]</paper-button>
+          </template>
+          <paper-button on-tap="confirmDialogCallback" dialog-confirm="" style\$="{{confirmDialogAffirmativeStyle}}" disabled="{{isConfirmDisabled}}">{{confirmDialogAffirmativeText}}</paper-button>
+        </div>
+      </paper-dialog>
+
       <div id="content">
         <login-element hidden\$="[[hasUser(user.*)]]" user="{{user}}"></login-element>
         <template is="dom-if" if="{{user}}">
@@ -214,36 +237,60 @@ class TackeleboxMobile extends PolymerElement {
     });
   }
   endFishing() {
-    let update = {};
-    let lat;
-    let long;
-    // get location of starting spot
-    navigator.geolocation.getCurrentPosition(function(location) {
-      lat = location.coords.latitude,
-      long = location.coords.longitude
-    });
+    this.confirm('End Fishing', `Do you want to end your fishing trip?`, 'End', 'Continue', '', null, () => {
+      let update = {};
+      let lat;
+      let long;
+      // get location of starting spot
+      navigator.geolocation.getCurrentPosition(function(location) {
+        lat = location.coords.latitude,
+        long = location.coords.longitude
+      });
 
-    let waterData = {}
-    fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json()).then(data => {
-      var endFlowData = data.value.timeSeries[0].values[0].value[0].value;
-      // waterData.flowRate = (parseInt(endFlowData) + parseInt(this.state.flowData)) / 2
-      waterData.location = {
-        lat: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.latitude,
-        lng: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.longitude
-      }
-      update['end_location'] = {
-        lat,
-        long
-      }
-      firebase.database().ref(`sessions/${this.sessionId}`).update(update).then(() => {
-        this.sessionId = null;
-        this.numFishCaught = 0;
-        this.selectedView = 'end'
-      })
-    });
+      let waterData = {}
+      fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json()).then(data => {
+        var endFlowData = data.value.timeSeries[0].values[0].value[0].value;
+        // waterData.flowRate = (parseInt(endFlowData) + parseInt(this.state.flowData)) / 2
+        waterData.location = {
+          lat: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.latitude,
+          lng: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.longitude
+        }
+        update['end_location'] = {
+          lat,
+          long
+        }
+        firebase.database().ref(`sessions/${this.sessionId}`).update(update).then(() => {
+          this.sessionId = null;
+          this.numFishCaught = 0;
+          this.selectedView = 'end'
+        })
+      });
+    })
   }
   switchView(target) {
     this.set('selectedView', target);
+  }
+  confirm(heading, body, affirmativeText, dismissiveText, affirmativeStyle, confirmDialogBodyType, callback, cancelCallback, otherButtons) {
+    if (this.skipConfirm) {
+      callback();
+    } else {
+      this.confirmDialogHeading = heading || '';
+      this.$.confirmDialogBody.innerHTML = body || '';
+      this.confirmDialogAffirmativeText = affirmativeText || '';
+      this.confirmDialogDismissiveText = dismissiveText || '';
+      this.confirmDialogAffirmativeStyle = affirmativeStyle || '';
+      if (affirmativeStyle != null && affirmativeStyle != '') {
+        this.confirmDialogDismissiveStyle = 'color:black';
+      }
+      else {
+        this.confirmDialogDismissiveStyle = '';
+      }
+      this.confirmDialogCallback = callback || function () {};
+      this.confirmDialogCancelCallback = cancelCallback || function () {};
+      this.confirmDialogBodyType = confirmDialogBodyType;
+      this.confirmDialogOtherButtons = otherButtons;
+      this.$.confirmDialog.open();
+    }
   }
 }
 customElements.define(TackeleboxMobile.is, TackeleboxMobile);
