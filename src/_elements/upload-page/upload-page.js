@@ -45,10 +45,22 @@ class UploadPage extends PolymerElement {
           border-radius: 15px;
           width: 50%;
           min-height: 150px;
+          padding: 10px;
+          flex-wrap: wrap;
         }
         .pageView {
           width: 100%;
           transition: all 2s;
+        }
+        .thumbnailPhoto {
+          height: 125px;
+          border: 1px solid lightgray;
+          margin: 5px;
+          border-radius: 10px;
+        }
+        .thumbnailDelete {
+          position: absolute;
+          right: 0;
         }
       </style>
       <tacklebox-toolbar user="{{user}}"></tacklebox-toolbar>
@@ -68,8 +80,10 @@ class UploadPage extends PolymerElement {
           </div>
           <div hidden\$="{{!equal(pageIndex, 1)}}" index="1" class="pageView flex-col-center-h">
             <h2>{{computeSessionTitle(selectedSession)}}</h2>
-            <paper-button class="button uploadButton">Select Photos</paper-button>
-            <div id="photoContainer"></div>
+            <paper-button class="button uploadButton" on-tap="selectPhotos">Select Photos</paper-button>
+            <input style="display: none" type="file" id="files" multiple />
+            <div class="flex-row-center" id="photoContainer">
+            </div>
             <div class="flex-row-center">
               <paper-button style="background-color: #272932" on-tap="changePage" class="button">Back</paper-button>
               <paper-button disabled="{{!canContinue}}" class="button">Upload Photos</paper-button>
@@ -106,6 +120,40 @@ class UploadPage extends PolymerElement {
       'getData(user)',
       'calcCanContinue(selectedSessionIndex)'
     ]
+  }
+  selectPhotos() { 
+    this.shadowRoot.querySelector('#files').addEventListener('change', e => {
+      var files = e.target.files;
+      // Loop through the FileList and render image files as thumbnails.
+      for (var i = 0; i < files.length; i++) {
+        let file = files[i];
+        // Only process image files.
+        if (!file.type.match('image.*')) {
+          continue;
+        }
+
+        var reader = new FileReader();
+        // Closure to capture the file information.
+        reader.onload = event => {
+            // Render thumbnail.
+            var div = document.createElement('div');
+            div.style = `height: 135px; position: relative; margin: 5px;`;
+            var img = document.createElement('img');
+            img.src = event.target.result;
+            img.classList.add('thumbnailPhoto');
+            div.appendChild(img);
+            div.innerHTML += `<paper-icon-button icon="icons:delete" class="thumbnailDelete" on-tap="deleteThumbnail"></paper-icon-button>`
+            this.shadowRoot.querySelector('#photoContainer').insertBefore(div, null);
+        };
+
+        // Read in the image file as a data URL.
+        reader.readAsDataURL(file);
+      }
+    }, false);
+    this.shadowRoot.querySelector('#files').click();
+  }
+  deleteThumbnail() {
+    console.log("deleting")
   }
   ready() {
     super.ready();
