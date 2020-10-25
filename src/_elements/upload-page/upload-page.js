@@ -4,6 +4,7 @@ import '../tacklebox-toolbar/tacklebox-toolbar'
 import '../login-element/login-element'
 import '../../helpers/style-modules/flex-styles'
 import '../../helpers/widgets/toArray'
+import moment from 'moment'
 
 class UploadPage extends PolymerElement {
   static get template() {
@@ -50,26 +51,23 @@ class UploadPage extends PolymerElement {
           transition: all 2s;
         }
       </style>
-      <firebase-app api-key=""></firebase-app>
-      <firebase-document path="/sessions" data="{{fishingSessions}}"></firebase-document>
-      <firebase-document path="/users/{{user.uid}}/sessions" data="{{userFishingSessions}}"></firebase-document>
       <tacklebox-toolbar user="{{user}}"></tacklebox-toolbar>
       <login-element hidden\$="[[hasUser(user.*)]]" user="{{user}}"></login-element>
       <template is="dom-if" if="{{user}}">
         <div id="content" style="flex: 1">
           <div hidden\$="{{!equal(pageIndex, 0)}}" index="0" class="pageView flex-col-center-h">
             <h2>Pick your fishing trip</h2>
-            <paper-dropdown-menu label="Trips" style="margin: 10px 0px;">
-              <paper-listbox>
-                <template is="dom-repeat" items="{{}}">
-                  <paper-item></paper-item>
+            <paper-dropdown-menu label="Trips" vertical-offset="55" style="margin: 10px 0px;">
+              <paper-listbox slot="dropdown-content" selected="{{selectedSessionIndex}}">
+                <template is="dom-repeat" items="{{fishingSessions}}" filter="{{filterFishingSessions(item)}}">
+                  <paper-item>{{computeSessionTitle(item)}}</paper-item>
                 </template>
               </paper-listbox>
             </paper-dropdown-menu>
             <paper-button disabled="{{!canContinue}}" class="button" on-tap="changePage">Continue</paper-button>
           </div>
           <div hidden\$="{{!equal(pageIndex, 1)}}" index="1" class="pageView flex-col-center-h">
-            <h2>Selected Fishing Trip Goes here</h2>
+            <h2>{{computeSessionTitle(selectedSession)}}</h2>
             <paper-button class="button uploadButton">Select Photos</paper-button>
             <div id="photoContainer"></div>
             <div class="flex-row-center">
@@ -91,20 +89,22 @@ class UploadPage extends PolymerElement {
       },
       canContinue: {
         type: Boolean,
-        value: true
+        value: false,
       },
       pageIndex: {
         type: Number,
-        value: 1
+        value: 0
       },
-      userFishingSessions: {
+      fishingSessions: {
         type: Array,
+        value: [],
       }
     };
   }
   static get observers() {
     return [
-      'filterFishingSessions(fishingSessions.*)'
+      'getData(user)',
+      'calcCanContinue(selectedSessionIndex)'
     ]
   }
   ready() {
@@ -117,13 +117,36 @@ class UploadPage extends PolymerElement {
   equal(a, b) {
     return a == b
   }
+  toArray(obj) {
+    if (obj) {
+      return k.toArray(obj)
+    }
+  }
   changePage(e) {
     if (this.pageIndex == 1) this.pageIndex = 0;
     else if (this.pageIndex == 0) this.pageIndex = 1;
   }
+  computeSessionTitle(item) {
+    return `${item.body_of_water} - ${moment(item.date).format('M[/]D')}`
+  }
   filterFishingSessions() {
-    let sessions = k.toArray(this.fishingSessions);
-    console.log(sessions)
+    return function(item) {
+      console.log(item)
+      return item.uid == this.user.uid;
+    };
+  }
+  calcCanContinue() {
+    if (this.selectedSessionIndex != undefined) {
+      this.selectedSession = this.fishingSessions[this.selectedSessionIndex]
+      this.set('canContinue', true)
+    }
+    else this.set('canContinue', false)
+  }
+  async getData() {
+    if (this.user) {
+      let fishingSessions = await firebase.database().ref('sessions').once('value').then(s => s.val());
+      this.set('fishingSessions', k.toArray(fishingSessions))
+    }
   }
 }
 customElements.define(UploadPage.is, UploadPage);

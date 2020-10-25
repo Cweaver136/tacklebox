@@ -14,7 +14,8 @@
     "@polymer/paper-toast": "^3.0.1",
     "@polymer/polymer": "^3.0.0",
     "exif-js": "^2.3.0",
-    "exif-parser": "^0.1.12"
+    "exif-parser": "^0.1.12",
+    "moment": "^2.29.1"
   },
   "devDependencies": {
     "@polymer/test-fixture": "^4.0.2",
