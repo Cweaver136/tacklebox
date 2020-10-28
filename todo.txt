@@ -1,3 +1,19 @@
+TODO:
+
+UPLOAD:
+    Add abililty to delete photos once you've selected them
+    Provide a progress indicator as you're upoloading photos
+    Provide a toast upon completiong
+    Bring to end screen to either upload more photos or be done
+
+Dashboard
+    Style this jawn
+    Make basic cards clickable
+    Create the detailed view for each session
+    
+
+
+
 [] get weather data for a fishing session
     [] beginning and end temps and then average
 
@@ -42,4 +58,3 @@ fish (this should be where all the data is stored)
                 length: "12"
                 lure: "white magnet"
                 type: "brown trout"
-

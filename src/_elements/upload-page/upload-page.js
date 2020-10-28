@@ -5,6 +5,7 @@ import '../login-element/login-element'
 import '../../helpers/style-modules/flex-styles'
 import '../../helpers/widgets/toArray'
 import moment from 'moment'
+import { v4 as uuidv4 } from "uuid";
 
 class UploadPage extends PolymerElement {
   static get template() {
@@ -86,7 +87,7 @@ class UploadPage extends PolymerElement {
             </div>
             <div class="flex-row-center">
               <paper-button style="background-color: #272932" on-tap="changePage" class="button">Back</paper-button>
-              <paper-button disabled="{{!canContinue}}" class="button">Upload Photos</paper-button>
+              <paper-button on-tap="uploadPhotos" class="button">Upload Photos</paper-button>
             </div>
           </div>
         </div>
@@ -110,6 +111,10 @@ class UploadPage extends PolymerElement {
         value: 0
       },
       fishingSessions: {
+        type: Array,
+        value: [],
+      },
+      photosToUpload: {
         type: Array,
         value: [],
       }
@@ -148,6 +153,9 @@ class UploadPage extends PolymerElement {
 
         // Read in the image file as a data URL.
         reader.readAsDataURL(file);
+
+        // Add file to photosToUpload array
+        this.push('photosToUpload', file);
       }
     }, false);
     this.shadowRoot.querySelector('#files').click();
@@ -179,7 +187,6 @@ class UploadPage extends PolymerElement {
   }
   filterFishingSessions() {
     return function(item) {
-      console.log(item)
       return item.uid == this.user.uid;
     };
   }
@@ -195,6 +202,33 @@ class UploadPage extends PolymerElement {
       let fishingSessions = await firebase.database().ref('sessions').once('value').then(s => s.val());
       this.set('fishingSessions', k.toArray(fishingSessions))
     }
+  }
+  async uploadPhotos() {
+    if (this.photosToUpload.length > 0) {
+      let update = {};
+      let promises = [];
+      for (let i = 0; i < this.photosToUpload.length; i++) {
+        let photoId = uuidv4();;
+        promises.push(new Promise(resolve => {
+          // todo get photo data and save it to firebase
+          let pictureRef = firebase.storage().ref(`photos/${this.selectedSession.$key}/${photoId}`)
+          pictureRef.put(this.photosToUpload[i]).then(() => {
+            pictureRef.getDownloadURL().then(url => {
+              update[this.selectedSession.$key + '/photos/'+ photoId] = {url};
+              resolve();
+            })
+          });
+        }))
+      }
+      Promise.all(promises).then(() => {
+        firebase.database().ref('sessions').update(update).then(() => {
+          console.log("photos uploaded successfully");
+        })
+      })
+    }
+    // else {
+    //   this.toast('No photos selected to upload')
+    // }
   }
 }
 customElements.define(UploadPage.is, UploadPage);
