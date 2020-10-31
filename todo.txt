@@ -2,15 +2,11 @@ TODO:
 
 UPLOAD:
     Add abililty to delete photos once you've selected them
-    Provide a progress indicator as you're upoloading photos
-    Provide a toast upon completiong
-    Bring to end screen to either upload more photos or be done
 
 Dashboard
     Style this jawn
     Make basic cards clickable
     Create the detailed view for each session
-    
 
 
 
