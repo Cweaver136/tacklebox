@@ -9,6 +9,7 @@ class TackleboxToolbar extends PolymerElement {
     return html`
       <style include="flex-styles">
         :host {
+          height: 60px;
           width: 100%;
           display: flex;
           font-family: var(--paper-font-title_-_font-family)

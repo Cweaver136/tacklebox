@@ -130,7 +130,7 @@ class UploadPage extends PolymerElement {
       },
       pageIndex: {
         type: Number,
-        value: 0
+        value: 1
       },
       fishingSessions: {
         type: Array,
@@ -139,6 +139,10 @@ class UploadPage extends PolymerElement {
       photosToUpload: {
         type: Array,
         value: {},
+      },
+      inputListener: {
+        type: Boolean,
+        value: false,
       }
     };
   }
@@ -152,30 +156,33 @@ class UploadPage extends PolymerElement {
     super.ready();
   }
   selectPhotos() { 
-    this.shadowRoot.querySelector('#files').addEventListener('change', e => {
-      var files = e.target.files;
-      let count = files.length;
-      let obj = {};
-      this.toast(`Loading Photos...`, null, 100000000);
-      // Loop through the FileList and render image files as thumbnails.
-      for (var i = 0; i < count; i++) {
-        let file = files[i];
-        // Only process image files.
-        if (file.type.match('image.*')) {
-          var reader = new FileReader();
-          // Closure to capture the file information.
-          reader.onload = (event) => {
-              // Render thumbnail.
-              file.src = event.target.result
-              // Add file to photosToUpload array
-              if (!this.photosToUpload[file.name]) obj[file.name] = file
-              if (!--count) this.filesLoaded(obj);
-          };
-          // Read in the image file as a data URL.
-          reader.readAsDataURL(file);
+    if (!this.inputListener) {
+      this.inputListener = true;
+      this.shadowRoot.querySelector('#files').addEventListener('change', e => {
+        var files = e.target.files;
+        let count = files.length;
+        let obj = {};
+        this.toast(`Loading Photos...`, null, 100000000);
+        // Loop through the FileList and render image files as thumbnails.
+        for (var i = 0; i < count; i++) {
+          let file = files[i];
+          // Only process image files.
+          if (file.type.match('image.*')) {
+            var reader = new FileReader();
+            // Closure to capture the file information.
+            reader.onload = (event) => {
+                // Render thumbnail.
+                file.src = event.target.result
+                // Add file to photosToUpload array
+                obj[file.name] = file;
+                if (!--count) this.filesLoaded(obj);
+            };
+            // Read in the image file as a data URL.
+            reader.readAsDataURL(file);
+          }
         }
-      }
-    }, false);
+      }, false);
+    }
     this.shadowRoot.querySelector('#files').click();
   }
   async uploadPhotos() {
@@ -220,14 +227,27 @@ class UploadPage extends PolymerElement {
     }
   }
   filesLoaded(files) {
-    this.set('photosToUpload', files);
-    this.toast(`Loading Photos...`, null, 2000);
+    if (Object.keys(files).length > 0) {
+      let photos = JSON.parse(JSON.stringify(this.photosToUpload));
+      // if this photo isn't in the existing photo list, add it
+      for (let key in files) {
+        console.log(key)
+        if (!photos[key]) {
+          console.log(files[key])
+          photos[key] = files[key];
+        }
+        else {
+          console.log("photo already exsists", key)
+        }
+      }
+      this.set('photosToUpload', files);
+      this.toast(`Loading Photos...`, null, 2000);
+    }
   } 
   deleteThumbnail(e) {
     let key = e.target.getAttribute('key');
-    let temp = this.photosToUpload;
+    let temp = JSON.parse(JSON.stringify(this.photosToUpload));
     delete temp[key];
-    console.log("temp", temp)
     this.set('photosToUpload', temp)
   }
   hasUser() {
