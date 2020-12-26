@@ -1,23 +1,36 @@
 TODO:
 
+    Finish mobile.
+        **Get a timer working to record length of the fishing session
+            Setup way to record gear 
+            Really should be a prompt to walk you through setting up your gear for that trip after you hit lets fish.
+                Should be able to select presets
+    Figure out a watch app that I can record data from
+        Whenever I record a voice clip, create a fish caught record and capture it's time taken. That marks the start of the time bucket
+
+
 UPLOAD:
     Add abililty to delete photos once you've selected them
 
 Dashboard
     Style this jawn
-    Make basic cards clickable
-    Create the detailed view for each session
+    Need to add data for each session that you've got
+
+Mobile
+    get weather data for a fishing session
+        beginning and end temps and then average
+
+    provide prompt to pick which creek you're fishing
+    Should have a way when you start the app to setup your gear you're using.
+
+Watch
+    Figure out how to record fish in a session
 
 
+MVP
+    Watch app that allows you to record information about a fish and creates a timestamp and new fish entry
+    Page to upload photos to your fishing sessionas
 
-[] get weather data for a fishing session
-    [] beginning and end temps and then average
-
-    [] provide prompt to pick which creek you're fishing
-    
-    [] session should merge if there are more than one on a given day
-        [] merge total time
-        [] merge fish caught
 
 MAKE THIS WHOLE THING A WEB APP
 [] when you catch a fish and add a lure, you should add to a whole big list that allows you to then filter when you're typing in a lure the next time
@@ -25,6 +38,9 @@ MAKE THIS WHOLE THING A WEB APP
 Mobile app that literally just does the tracking. 
 
 Then a web app that allows you to look at all the data.
+
+
+So that when you catch a fish it can grab data from that. 
 
 users
     7yqpcbSpNogEzdE2g6fJf6ejUAB3

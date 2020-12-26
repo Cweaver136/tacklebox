@@ -104,6 +104,11 @@ class DashboardPage extends PolymerElement {
                 <span>H: 72 | L: 70</span>
               </div>
               <div id="fishColumn">
+              <template is="dom-repeat" items="">
+                <div class="fishEntry">
+                
+                </div>
+              </template>
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@ import { PolymerElement, html } from '@polymer/polymer/polymer-element.js';
 
 import '../login-element/login-element.js'
 import '../../helpers/style-modules/flex-styles'
+import createTimer from 'unitimer'
 
 class TackeleboxMobile extends PolymerElement {
   static get template() {
@@ -134,15 +135,20 @@ class TackeleboxMobile extends PolymerElement {
             </div>
             <div class="contentContainer flex-col" hidden\$="[[!equal(selectedView, 'inProgress')]]" id="inProgress">
               <div id="fishingOverview">
-                <h3>Time: {{timeElapsed}}</h3>
+                <h3>Time: {{readableTimeElapsed}}</h3>
                 <h3>Fish Caught: {{numFishCaught}}</h3>
               </div>
             </div>
             <div class="contentContainer" hidden\$="[[!equal(selectedView, 'paused')]]" id="paused"></div>
-            <div class="contentContainer" hidden\$="[[!equal(selectedView, 'end')]]" id="end"></div>
+            <div class="contentContainer flex-col-center-v" hidden\$="[[!equal(selectedView, 'end')]]" id="end">
+              <span>Trip Details</span>
+              <span>Time: {{readableTimeElapsed}}</span>
+              <span>Fish Caught: {{numFishCaught}}</span>
+              <span>Avg Temperatue {{temperatureData.avg}}</span>
+            </div>
           <div>
           <div id="buttons" hidden\$="[[equal(selectedView, 'start')]]">
-            <paper-button on-tap="changePage" class="button">Pause</paper-button>
+            <!-- <paper-button on-tap="changePage" class="button">Pause</paper-button> -->
             <paper-button disabled="{{!canContinue}}" class="button" on-tap="endFishing">End</paper-button>
           </div>
         </template>
@@ -180,8 +186,20 @@ class TackeleboxMobile extends PolymerElement {
           'Susquehanna River',
           'Yellow Breeches Creek'
         ]
+      },
+      weatherApiKey: {
+        type: String,
+        value: '18ec2e0a89f38de836ae9e5f16371798'
+      
+      },
+      temperatureData: {
+        type: Object,
+        value: {}
+      },
+      elapsedTime: {
+        type: Number
       }
-    };
+    }
   }
   static get observers() {
     return [
@@ -192,7 +210,6 @@ class TackeleboxMobile extends PolymerElement {
     super.ready();
   }
   equal(a, b) {
-    console.log(a, b)
     return a == b;
   }
   hasUser() {
@@ -203,69 +220,124 @@ class TackeleboxMobile extends PolymerElement {
     if (this.bodiesOfWater[this.selectedBOW]) this.canStartFishing = true;
     else return this.canStartFishing = false;
   }
-  startFishing() {
+  async startFishing() {
     this.switchView('inProgress');
     let key = firebase.database().ref(`users/${this.user.uid}/sessions`).push().key
     let update = {}
     let lat;
     let long;
     // get location of starting spot
-    navigator.geolocation.getCurrentPosition(function(location) {
-      lat = location.coords.latitude,
-      long = location.coords.longitude
-    });
+    await new Promise(resolve => {
+      navigator.geolocation.getCurrentPosition(function(location) {
+        lat = location.coords.latitude,
+        long = location.coords.longitude
+        resolve();
+      });
+    })
     
+    let temp = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${this.weatherApiKey}&units=imperial`)
+    .then(response => response.json())
+    .then(data => {
+      return data.main.temp;
+    })
+    this.set('temperatureData.start', temp);
+    
+    // let waterData = await fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json')
+    // .then(response => response.json())
+    // .then(data => {
+    //   return data.value.timeSeries[0]
+    // })
+    // let flow = (parseInt(waterData.values[0].value[0].value) + parseInt(this.state.flowData)) / 2
+    // let location = {
+    //   lat: waterData.sourceInfo.geoLocation.geogLocation.latitude,
+    //   lng: waterData.sourceInfo.geoLocation.geogLocation.longitude
+    // }
 
-    let waterData = {}
-    fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json()).then(data => {
-      waterData.flowRate = data.value.timeSeries[0].values[0].value[0].value;
-      update['users/' + this.user.uid + '/sessions/' + key] = true;
-      update['sessions/' + key] = {
-        uid: this.user.uid,
-        date: new Date().getTime(),
-        body_of_water: this.bodiesOfWater[this.selectedBOW],
+    update['users/' + this.user.uid + '/sessions/' + key] = true;
+    update['sessions/' + key] = {
+      uid: this.user.uid,
+      date: new Date().getTime(),
+      body_of_water: this.bodiesOfWater[this.selectedBOW],
+      temperature_data: {
+        start: temp
+      },
+      location_data: {
         start_location: {
           lat,
           long
         }
       }
-      firebase.database().ref().update(update).then(() => {
-        this.set('sessionId', key)
-      }).catch(e => {
-        console.log(e)
-      })
-    });
+    }
+    firebase.database().ref().update(update).then(() => {
+      this.set('sessionId', key)
+      this.timer = createTimer().start();
+      this.elapsedTimeInterval = setInterval(() => {
+        this.timer.stop();
+        this.timer.start()
+        this.elapsedTime = Math.round(this.timer.total());
+        this.readableTimeElapsed = this.msToTime(this.elapsedTime);
+      }, 1000)
+    }).catch(e => {
+      console.log(e)
+    })
   }
   endFishing() {
-    this.confirm('End Fishing', `Do you want to end your fishing trip?`, 'End', 'Continue', '', null, () => {
+    this.confirm('End Fishing', `Do you want to end your fishing trip?`, 'End', 'Continue', '', null, async () => {
       let update = {};
       let lat;
       let long;
-      // get location of starting spot
-      navigator.geolocation.getCurrentPosition(function(location) {
-        lat = location.coords.latitude,
-        long = location.coords.longitude
-      });
+      clearInterval(this.elapsedTimeInterval);
+      this.readableTimeElapsed = this.msToTime(this.elapsedTime);
+      update['elapsed_time'] = this.elapsedTime;
+      // get location of end spot
+      await new Promise(resolve => {
+        navigator.geolocation.getCurrentPosition(function(location) {
+          lat = location.coords.latitude,
+          long = location.coords.longitude
+          resolve();
+        });
+      })
 
-      let waterData = {}
-      fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json').then(response => response.json()).then(data => {
-        var endFlowData = data.value.timeSeries[0].values[0].value[0].value;
-        // waterData.flowRate = (parseInt(endFlowData) + parseInt(this.state.flowData)) / 2
-        waterData.location = {
-          lat: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.latitude,
-          lng: data.value.timeSeries[0].sourceInfo.geoLocation.geogLocation.longitude
-        }
-        update['end_location'] = {
-          lat,
-          long
-        }
-        firebase.database().ref(`sessions/${this.sessionId}`).update(update).then(() => {
-          this.sessionId = null;
-          this.numFishCaught = 0;
-          this.selectedView = 'end'
-        })
-      });
-    })
+      let temp = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${long}&appid=${this.weatherApiKey}&units=imperial`)
+      .then(response => response.json())
+      .then(data => {
+        return data.main.temp;
+      })
+      this.temperatureData.end = temp;
+      this.temperatureData.avg = (this.temperatureData.start + this.temperatureData.end) / 2;
+      
+      // let waterData = await fetch('https://waterservices.usgs.gov/nwis/iv/?sites=01571500&format=json')
+      // .then(response => response.json())
+      // .then(data => {
+      //   return data.value.timeSeries[0]
+      // })
+      // let flow = (parseInt(waterData.values[0].value[0].value) + parseInt(this.state.flowData)) / 2
+      // let location = {
+      //   lat: waterData.sourceInfo.geoLocation.geogLocation.latitude,
+      //   lng: waterData.sourceInfo.geoLocation.geogLocation.longitude
+      // }
+
+      update['location_data/end_location'] = {
+        lat,
+        long
+      }
+      update['temperature_data/end'] = temp;
+      update['temperature_data/avg'] = this.temperatureData.avg;
+      firebase.database().ref(`sessions/${this.sessionId}`).update(update).then(() => {
+        this.sessionId = null;
+        this.selectedView = 'end'
+      })
+    });
+  }
+  msToTime(s) {
+    var ms = s % 1000;
+    s = (s - ms) / 1000;
+    var secs = s % 60;
+    s = (s - secs) / 60;
+    var mins = s % 60;
+    var hrs = (s - mins) / 60;
+  
+    return hrs + ' h ' + mins + ' m ' + secs + ' s ';
   }
   switchView(target) {
     this.set('selectedView', target);
