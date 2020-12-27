@@ -1,13 +1,23 @@
 TODO:
 
     Finish mobile.
-        **Get a timer working to record length of the fishing session
             Setup way to record gear 
             Really should be a prompt to walk you through setting up your gear for that trip after you hit lets fish.
                 Should be able to select presets
-    Figure out a watch app that I can record data from
-        Whenever I record a voice clip, create a fish caught record and capture it's time taken. That marks the start of the time bucket
 
+    watch and camera function completely apart from the phone web app
+
+    Watch:
+        - gets audio clip
+        - takes a timestamp of when you take that audio clip
+
+    Camera:
+        - Takes picture of fish
+        - Gets metadata for that image and also gets a timestamp for when that picture is taken
+
+    Picture should be taken first, voice clip after
+
+    Match audio clip timestamp to the photo timestamp
 
 UPLOAD:
     Add abililty to delete photos once you've selected them
@@ -22,10 +32,6 @@ Mobile
 
     provide prompt to pick which creek you're fishing
     Should have a way when you start the app to setup your gear you're using.
-
-Watch
-    Figure out how to record fish in a session
-
 
 MVP
     Watch app that allows you to record information about a fish and creates a timestamp and new fish entry

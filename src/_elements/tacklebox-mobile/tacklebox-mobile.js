@@ -141,10 +141,12 @@ class TackeleboxMobile extends PolymerElement {
             </div>
             <div class="contentContainer" hidden\$="[[!equal(selectedView, 'paused')]]" id="paused"></div>
             <div class="contentContainer flex-col-center-v" hidden\$="[[!equal(selectedView, 'end')]]" id="end">
-              <span>Trip Details</span>
-              <span>Time: {{readableTimeElapsed}}</span>
-              <span>Fish Caught: {{numFishCaught}}</span>
-              <span>Avg Temperatue {{temperatureData.avg}}</span>
+              <h2>Trip Details</h2>
+              <div>
+                <h4>Time: {{readableTimeElapsed}}</h4>
+                <h4>Fish Caught: {{numFishCaught}}</h4>
+                <h4>Avg Temperatue: {{temperatureData.avg}}</h4>
+              </div>
             </div>
           <div>
           <div id="buttons" hidden\$="[[equal(selectedView, 'start')]]">
@@ -226,6 +228,41 @@ class TackeleboxMobile extends PolymerElement {
     let update = {}
     let lat;
     let long;
+
+    var colors = [ 'aqua' , 'azure' , 'beige', 'bisque', 'black', 'blue', 'brown', 'chocolate', 'coral' ];
+    var grammar = '#JSGF V1.0; grammar colors; public <color> = ' + colors.join(' | ') + ' ;'
+
+    var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition
+    var SpeechGrammarList = SpeechGrammarList || webkitSpeechGrammarList
+    var SpeechRecognitionEvent = SpeechRecognitionEvent || webkitSpeechRecognitionEvent
+    var recognition = new SpeechRecognition();
+    var speechRecognitionList = new SpeechGrammarList();
+
+    speechRecognitionList.addFromString(grammar, 1);
+
+    recognition.grammars = speechRecognitionList;
+    recognition.continuous = true;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    console.log(recognition)
+    recognition.onresult = function(event) {
+      var color = event.results[0][0].transcript;
+      console.log("color", color);
+      console.log('Confidence: ' + event.results[0][0].confidence);
+    } 
+
+    recognition.start();
+
+    this.timer = createTimer().start();
+    this.elapsedTimeInterval = setInterval(() => {
+      this.timer.stop();
+      this.timer.start()
+      this.elapsedTime = Math.round(this.timer.total());
+      this.readableTimeElapsed = this.msToTime(this.elapsedTime);
+    }, 1000)
+
     // get location of starting spot
     await new Promise(resolve => {
       navigator.geolocation.getCurrentPosition(function(location) {
@@ -269,14 +306,7 @@ class TackeleboxMobile extends PolymerElement {
       }
     }
     firebase.database().ref().update(update).then(() => {
-      this.set('sessionId', key)
-      this.timer = createTimer().start();
-      this.elapsedTimeInterval = setInterval(() => {
-        this.timer.stop();
-        this.timer.start()
-        this.elapsedTime = Math.round(this.timer.total());
-        this.readableTimeElapsed = this.msToTime(this.elapsedTime);
-      }, 1000)
+      this.set('sessionId', key);
     }).catch(e => {
       console.log(e)
     })

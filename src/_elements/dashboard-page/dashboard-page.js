@@ -48,6 +48,7 @@ class DashboardPage extends PolymerElement {
         }
         .contentWrapper {
           display: flex;
+          flex-wrap: wrap;
           justify-content: end;
           padding: 50px;
           flex: 1;

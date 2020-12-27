@@ -41,13 +41,20 @@ class UploadPage extends PolymerElement {
           color: black;
           opacity: .6
         }
-        #photoContainer {
+        #photoContainer, #audioContainer {
           border: 1px solid lightgray;
           border-radius: 15px;
-          width: 50%;
           min-height: 150px;
+          width: 100%;
           padding: 10px;
           flex-wrap: wrap;
+        }
+        #photosWrapper, #audioClipsWrapper {
+          margin: 0px 30px;
+        }
+        #uploadContainers {
+          width: 100%;
+          margin-bottom: 200px;
         }
         .pageView {
           width: 100%;
@@ -59,9 +66,30 @@ class UploadPage extends PolymerElement {
           margin: 5px;
           border-radius: 10px;
         }
-        .thumbnailDelete {
+        .trashcanDelete {
           position: absolute;
           right: 0;
+        }
+        .audioClipDetails {
+          position: relative;
+          margin: 2px 0px;
+          padding: 0px 5px;
+          height: 30px; 
+          width: 95%;
+          border-radius: 15px;
+          border: 1px solid lightgray;
+        }
+        .audioClipDetails > span {
+          font-size: 14px;
+        }
+        #buttonBar {
+          padding: 10px 0px;
+          margin-top: 20px;
+          border-top: 1px solid lightgray;
+          width: 100%;
+          position: fixed;
+          bottom: 0;
+          background: white;
         }
       </style>
       <tacklebox-toolbar user="{{user}}"></tacklebox-toolbar>
@@ -80,8 +108,8 @@ class UploadPage extends PolymerElement {
         <div id="content" style="flex: 1">
           <div hidden\$="{{!equal(pageIndex, 0)}}" index="0" class="pageView flex-col-center-h">
             <h2>Pick your fishing trip</h2>
-            <paper-dropdown-menu label="Trips" vertical-offset="55" style="margin: 10px 0px;">
-              <paper-listbox slot="dropdown-content" selected="{{selectedSessionIndex}}">
+            <paper-dropdown-menu label="Trips" style="width:325px" vertical-offset="55" style="margin: 10px 0px;">
+              <paper-listbox style="width:325px" slot="dropdown-content" selected="{{selectedSessionIndex}}">
                 <template is="dom-repeat" items="{{fishingSessions}}" filter="{{filterFishingSessions(item)}}">
                   <paper-item>{{computeSessionTitle(item)}}</paper-item>
                 </template>
@@ -91,24 +119,48 @@ class UploadPage extends PolymerElement {
           </div>
           <div hidden\$="{{!equal(pageIndex, 1)}}" index="1" class="pageView flex-col-center-h">
             <h2>{{computeSessionTitle(selectedSession)}}</h2>
-            <paper-button class="button uploadButton" on-tap="selectPhotos">Select Photos</paper-button>
-            <input style="display: none" type="file" id="files" multiple />
-            <div class="flex-row-center" id="photoContainer">
-              <template is="dom-repeat" items="{{toArray(photosToUpload)}}" as="picture">
-                <div style="height: 135px; position: relative; margin: 5px">
-                  <img src="{{picture.src}}" class="thumbnailPhoto">
-                  <paper-icon-button icon="icons:delete" key\$="{{picture.$key}}" on-tap="deleteThumbnail" class="thumbnailDelete"></paper-icon-button>
+            <div class="flex-row-baseline" id="uploadContainers">
+              <div class="flex-col-center-vh" id="photosWrapper" style="width: 40%">
+                <paper-button class="button uploadButton" on-tap="selectPhotos">Select Photos</paper-button>
+                <input style="display: none" type="file" id="photos" multiple />
+                <div class="flex-row-center" id="photoContainer">
+                  <template is="dom-repeat" items="{{toArray(photosToUpload)}}" as="picture">
+                    <div style="height: 135px; position: relative; margin: 5px">
+                      <img src="{{picture.src}}" class="thumbnailPhoto">
+                      <paper-icon-button icon="icons:delete" key\$="{{picture.$key}}" data="photosToUpload" on-tap="deleteItem" class="trashcanDelete"></paper-icon-button>
+                    </div>
+                  </template>
                 </div>
-              </template>
+              </div>
+              
+              <div class="flex-col-center-vh" id="audioClipsWrapper" style="width: 40%">
+                <paper-button class="button uploadButton" on-tap="selectAudioClips">Select Audio Clips</paper-button>
+                <input style="display: none" type="file" id="audioClips" multiple />
+                <div class="flex-col-center-h" id="audioContainer">
+                  <template is="dom-repeat" items="{{toArray(audioToUpload)}}" as="clip">
+                    <div class="audioClipDetails flex-align-center">
+                      <span>{{clip.name}}</span>
+                      <paper-icon-button icon="icons:delete" key\$="{{clip.$key}}" data="audioToUpload" on-tap="deleteItem" class="trashcanDelete"></paper-icon-button>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
-            <div class="flex-row-center">
+            
+            <div id="buttonBar" class="flex-row-center" style="">
               <paper-button style="background-color: #272932" page="0" on-tap="changePage" class="button">Back</paper-button>
-              <paper-button on-tap="uploadPhotos" class="button">Upload Photos</paper-button>
+              <paper-button on-tap="uploadData" class="button">Upload Data</paper-button>
             </div>
           </div>
           <div hidden\$="{{!equal(pageIndex, 2)}}" index="2" class="pageView flex-col-center-h">
             <div class="flex-col-center-vh">
-              <span>{{numPhotosUploaded}} Photos have successfully been uploaded to {{computeSessionTitle(selectedSession)}}</span>
+              <h3>Upload Details:</h3>
+              <template is="dom-if" if="{{numPhotosUploaded}}">
+                <span>{{numPhotosUploaded}} Photos have successfully been uploaded to {{computeSessionTitle(selectedSession)}}</span>
+              </template>
+              <template is="dom-if" if="{{numAudioClipsUploaded}}">
+                <span>{{numAudioClipsUploaded}} Audio Clips have successfully been uploaded to {{computeSessionTitle(selectedSession)}}</span>
+              </template>
               <paper-button on-tap="changePage" page="0" class="button">Upload More</paper-button>
             </div>
           </div>
@@ -130,19 +182,35 @@ class UploadPage extends PolymerElement {
       },
       pageIndex: {
         type: Number,
-        value: 1
+        value: 0
       },
       fishingSessions: {
         type: Array,
         value: [],
       },
       photosToUpload: {
-        type: Array,
+        type: Object,
         value: {},
       },
-      inputListener: {
+      audioToUpload: {
+        type: Object,
+        value: {}
+      },
+      photoListener: {
         type: Boolean,
         value: false,
+      },
+      audioListener: {
+        type: Boolean,
+        value: false
+      },
+      numPhotosUploaded: {
+        type: Number,
+        value: 0
+      },
+      numAudioClipsUploaded: {
+        type: Number,
+        value: 0
       }
     };
   }
@@ -156,9 +224,9 @@ class UploadPage extends PolymerElement {
     super.ready();
   }
   selectPhotos() { 
-    if (!this.inputListener) {
-      this.inputListener = true;
-      this.shadowRoot.querySelector('#files').addEventListener('change', e => {
+    if (!this.photoListener) {
+      this.photoListener = true;
+      this.shadowRoot.querySelector('#photos').addEventListener('change', e => {
         var files = e.target.files;
         let count = files.length;
         let obj = {};
@@ -175,7 +243,7 @@ class UploadPage extends PolymerElement {
                 file.src = event.target.result
                 // Add file to photosToUpload array
                 obj[file.name] = file;
-                if (!--count) this.filesLoaded(obj);
+                if (!--count) this.photosLoaded(obj);
             };
             // Read in the image file as a data URL.
             reader.readAsDataURL(file);
@@ -183,33 +251,77 @@ class UploadPage extends PolymerElement {
         }
       }, false);
     }
-    this.shadowRoot.querySelector('#files').click();
+    this.shadowRoot.querySelector('#photos').click();
   }
-  async uploadPhotos() {
-    let filesLength = Object.keys(this.photosToUpload).length;
-    this.numPhotosUploaded = filesLength;
-    if (filesLength > 0) {
-      this.shadowRoot.querySelector('#progressToast').open();
-      this.shadowRoot.querySelector('#progressPercent').indeterminate = true;
-      this.progressPercent = 0;
-      let update = {};
-      let promises = [];
-      let counter = 0;
-      this.progressText = `Uploading Photo ${counter + 1} of ${filesLength}`;
-      for (let key in this.photosToUpload) {
-        let photo = this.photosToUpload[key];
-        let photoId = uuidv4();;
+  selectAudioClips() {
+    if (!this.audioListener) {
+      this.audioListener = true;
+      this.shadowRoot.querySelector('#audioClips').addEventListener('change', e => {
+        var files = e.target.files;
+        let count = files.length;
+        let obj = {};
+        this.toast(`Loading Audio Clips...`, null, 3000);
+        // Loop through the FileList and render image files as thumbnails.
+        for (var i = 0; i < count; i++) {
+          let file = files[i];
+          obj[file.name] = file;
+        }
+        this.set('audioToUpload', obj);
+      }, false);
+    }
+    this.shadowRoot.querySelector('#audioClips').click();
+  }
+  async uploadData() {
+    let update = {};
+    let promises = [];
+    this.progressPercent = 0;
+    let counter = 0;
+    let photosLength = Object.keys(this.photosToUpload).length;
+    let audioLength = Object.keys(this.audioToUpload).length;
+    let filesLength = photosLength + audioLength;
+    if (audioLength > 0) {
+      let audioCounter = 0;
+      this.progressText = `Uploading Audio Clip ${audioCounter + 1} of ${audioLength}`;
+      for (let key in this.audioToUpload) {
+        let clip = this.audioToUpload[key];
+        let clipId = uuidv4();
         promises.push(new Promise(resolve => {
-          let pictureRef = firebase.storage().ref(`photos/${this.selectedSession.$key}/${photoId}`)
-          pictureRef.put(photo).then(() => {
-            pictureRef.getDownloadURL().then(url => {
-              update[this.selectedSession.$key + '/photos/'+ photoId] = {url};
+          let audioRef = firebase.storage().ref(`audio/${this.selectedSession.$key}/${clipId}`)
+          audioRef.put(clip).then(() => {
+            audioRef.getDownloadURL().then(url => {
+              update[this.selectedSession.$key + '/audio/'+ clipId] = {url};
               this.progressPercent = (++counter / filesLength) * 100;
-              this.progressText = `Uploading Photo ${counter} of ${filesLength}`;
+              this.progressText = `Uploading Photo ${++audioCounter} of ${audioLength}`;
+              this.numAudioClipsUploaded++;
               resolve();
             })
           });
         }))
+      }
+    }
+    
+    if (filesLength > 0) {
+      let photoCounter = 0;
+      this.shadowRoot.querySelector('#progressToast').open();
+      this.shadowRoot.querySelector('#progressPercent').indeterminate = true;
+      if (photosLength > 0) {
+        this.progressText = `Uploading Photo ${photoCounter + 1} of ${photosLength}`;
+        for (let key in this.photosToUpload) {
+          let photo = this.photosToUpload[key];
+          let photoId = uuidv4();
+          promises.push(new Promise(resolve => {
+            let pictureRef = firebase.storage().ref(`photos/${this.selectedSession.$key}/${photoId}`)
+            pictureRef.put(photo).then(() => {
+              pictureRef.getDownloadURL().then(url => {
+                update[this.selectedSession.$key + '/photos/'+ photoId] = {url};
+                this.progressPercent = (++counter / filesLength) * 100;
+                this.progressText = `Uploading Photo ${++photoCounter} of ${photosLength}`;
+                this.numPhotosUploaded++;
+                resolve();
+              })
+            });
+          }))
+        }
       }
       Promise.all(promises).then(() => {
         firebase.database().ref('sessions').update(update).then(() => {
@@ -226,14 +338,12 @@ class UploadPage extends PolymerElement {
       this.toast('No photos selected to upload')
     }
   }
-  filesLoaded(files) {
+  photosLoaded(files) {
     if (Object.keys(files).length > 0) {
       let photos = JSON.parse(JSON.stringify(this.photosToUpload));
       // if this photo isn't in the existing photo list, add it
       for (let key in files) {
-        console.log(key)
         if (!photos[key]) {
-          console.log(files[key])
           photos[key] = files[key];
         }
         else {
@@ -244,11 +354,15 @@ class UploadPage extends PolymerElement {
       this.toast(`Loading Photos...`, null, 2000);
     }
   } 
-  deleteThumbnail(e) {
+  deleteItem(e) {
     let key = e.target.getAttribute('key');
-    let temp = JSON.parse(JSON.stringify(this.photosToUpload));
-    delete temp[key];
-    this.set('photosToUpload', temp)
+    let data = e.target.getAttribute('data');
+    console.log(key, data);
+    console.log(JSON.parse(JSON.stringify(this[data])))
+    // let temp = JSON.parse(JSON.stringify(this[data]));
+    // delete temp[key];
+    // console.log(temp, data, key)
+    // this.set(data, temp)
   }
   hasUser() {
     if (this.user) return true;

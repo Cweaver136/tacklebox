@@ -9,6 +9,11 @@ $_documentContainer.innerHTML = `<dom-module id="flex-styles">
           align-items: center;
           justify-content: center;
         }
+        .flex-row-baseline {
+          display: flex;
+          align-items: baseline;
+          justify-content: center;
+        }
         .flex-col-center-h {
           display: flex;
           align-items: center;
@@ -28,6 +33,10 @@ $_documentContainer.innerHTML = `<dom-module id="flex-styles">
         .flex-col {
           display: flex;
           flex-direction: column
+        }
+        .flex-align-center {
+          display: flex;
+          align-items: center;
         }
     </style>
   </template>
