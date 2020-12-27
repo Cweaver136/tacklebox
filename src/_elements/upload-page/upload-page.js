@@ -234,6 +234,7 @@ class UploadPage extends PolymerElement {
         // Loop through the FileList and render image files as thumbnails.
         for (var i = 0; i < count; i++) {
           let file = files[i];
+          console.log("file", file)
           // Only process image files.
           if (file.type.match('image.*')) {
             var reader = new FileReader();
@@ -242,6 +243,10 @@ class UploadPage extends PolymerElement {
                 // Render thumbnail.
                 file.src = event.target.result
                 // Add file to photosToUpload array
+                EXIF.getData(file, function() {
+                  EXIF.getAllTags(this)
+                  console.log("metadata", this);
+                })
                 obj[file.name] = file;
                 if (!--count) this.photosLoaded(obj);
             };
@@ -291,7 +296,7 @@ class UploadPage extends PolymerElement {
             audioRef.getDownloadURL().then(url => {
               update[this.selectedSession.$key + '/audio/'+ clipId] = {url};
               this.progressPercent = (++counter / filesLength) * 100;
-              this.progressText = `Uploading Photo ${++audioCounter} of ${audioLength}`;
+              this.progressText = `Uploading Audio Clip ${++audioCounter} of ${audioLength}`;
               this.numAudioClipsUploaded++;
               resolve();
             })
@@ -308,12 +313,22 @@ class UploadPage extends PolymerElement {
         this.progressText = `Uploading Photo ${photoCounter + 1} of ${photosLength}`;
         for (let key in this.photosToUpload) {
           let photo = this.photosToUpload[key];
+
+          // build exif data
+          let dateTime = photo.exifdata.DateTime;
+          let date = dateTime.split(' ')[0].replace(':', '-');
+          let time = dateTime.split(' ')[1];
+          let dateTaken = moment(`${date} ${time}`).valueOf();
+          
           let photoId = uuidv4();
           promises.push(new Promise(resolve => {
             let pictureRef = firebase.storage().ref(`photos/${this.selectedSession.$key}/${photoId}`)
             pictureRef.put(photo).then(() => {
               pictureRef.getDownloadURL().then(url => {
-                update[this.selectedSession.$key + '/photos/'+ photoId] = {url};
+                update[this.selectedSession.$key + '/photos/'+ photoId] = {
+                  url,
+                  date_taken: dateTaken,
+                };
                 this.progressPercent = (++counter / filesLength) * 100;
                 this.progressText = `Uploading Photo ${++photoCounter} of ${photosLength}`;
                 this.numPhotosUploaded++;

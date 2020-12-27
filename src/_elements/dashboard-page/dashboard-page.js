@@ -49,7 +49,7 @@ class DashboardPage extends PolymerElement {
         .contentWrapper {
           display: flex;
           flex-wrap: wrap;
-          justify-content: end;
+          justify-content: center;
           padding: 50px;
           flex: 1;
         }
@@ -78,10 +78,22 @@ class DashboardPage extends PolymerElement {
         #fishColumn {
           flex: .6;
         }
+        #getTripDataButton {
+          border-radius: 50px;
+          background: #233d4d;
+          margin: 20px;
+          color: #fcca46;
+        }
       </style>
       <tacklebox-toolbar user="{{user}}"></tacklebox-toolbar>
       <login-element hidden\$="[[hasUser(user.*)]]" user="{{user}}"></login-element>
       <template is="dom-if" if="{{user}}">
+        <paper-toast id="toast" text="{{toastText}}" visible="false" duration="{{toastDuration}}">
+          <span id="toastBody"></span>
+          <template is="dom-if" if="{{showCloseToastButton}}">
+            <paper-button style="margin:5px; padding:5px;" on-tap="closeToast">Close</paper-button>
+          </template>
+        </paper-toast>
         <div id="content" style="flex: 1">
           <div class="contentWrapper">
             <template is="dom-repeat" items="{{toArray(fishingSessions)}}" filter="{{filterFishingSessions(item)}}">
@@ -99,8 +111,11 @@ class DashboardPage extends PolymerElement {
         <div id="detailsPage" opened\$="{{detailsOpen}}">
             <div id="detailsWrapper">
               <div id="infoColumn">
-                <h3 style="margin-left: 5px;">{{selectedFishingTrip.body_of_water}}</h3>
-                <h5 style="margin-left: 5px;">{{getDate(selectedFishingTrip)}}</h5>
+                <div class="flex-align-center">
+                  <h3 style="margin-left: 5px;">{{selectedTrip.body_of_water}}</h3>
+                  <paper-icon-button icon="icons:build" on-tap="getTripData" id="getTripDataButton"></paper-icon-button>
+                </div>
+                <h5 style="margin-left: 5px;">{{getDate(selectedTrip)}}</h5>
                 <span>Temperature</span>
                 <span>H: 72 | L: 70</span>
               </div>
@@ -156,6 +171,18 @@ class DashboardPage extends PolymerElement {
       return item.uid == this.user.uid;
     };
   }
+  toast(text, innerHTML, duration) {
+    this.shadowRoot.querySelector('#toast').hide();
+    this.toastText = text;
+    if (innerHTML != null) {
+      this.shadowRoot.querySelector('#toastBody').innerHTML = innerHTML;
+    } else {
+      this.set('$.toastBody.innerHTML', '');
+    }
+    if (duration != null) this.set('toastDuration', duration);
+    else this.set('toastDuration', 6000);
+    this.shadowRoot.querySelector('#toast').show();
+  }
   findParentElementByClass(startingNode, desiredClass) {
     if (startingNode.classList.contains(desiredClass)) return startingNode;
     else return this.findParentElementByClass(startingNode.parentElement, desiredClass);
@@ -164,8 +191,12 @@ class DashboardPage extends PolymerElement {
     let target = this.findParentElementByClass(e.target, 'card');
     let key = target.getAttribute('key');
     this.detailsOpen = true;
-    this.set('selectedFishingTrip', this.fishingSessions[key]);
+    this.set('selectedTrip', this.fishingSessions[key]);
     console.log("key", key)
+  }
+  getTripData() {
+    this.toast('Getting Trip Data');
+    console.log(this.selectedTrip);
   }
 }
 customElements.define(DashboardPage.is, DashboardPage);

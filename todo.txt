@@ -19,6 +19,8 @@ TODO:
 
     Match audio clip timestamp to the photo timestamp
 
+    Need to figure out how to parse audio clip and get gps location based off of the information that I have
+
 UPLOAD:
     Add abililty to delete photos once you've selected them
 
