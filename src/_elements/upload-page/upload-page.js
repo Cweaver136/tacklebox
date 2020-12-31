@@ -278,67 +278,75 @@ class UploadPage extends PolymerElement {
   }
   async uploadData() {
     let update = {};
-    let promises = [];
     this.progressPercent = 0;
     let counter = 0;
     let photosLength = Object.keys(this.photosToUpload).length;
     let audioLength = Object.keys(this.audioToUpload).length;
     let filesLength = photosLength + audioLength;
     if (audioLength > 0) {
-      let audioCounter = 0;
-      this.progressText = `Uploading Audio Clip ${audioCounter + 1} of ${audioLength}`;
-      for (let key in this.audioToUpload) {
-        let clip = this.audioToUpload[key];
-        let clipId = uuidv4();
-        promises.push(new Promise(resolve => {
-          let audioRef = firebase.storage().ref(`audio/${this.selectedSession.$key}/${clipId}`)
-          audioRef.put(clip).then(() => {
-            audioRef.getDownloadURL().then(url => {
-              update[this.selectedSession.$key + '/audio/'+ clipId] = {url};
-              this.progressPercent = (++counter / filesLength) * 100;
-              this.progressText = `Uploading Audio Clip ${++audioCounter} of ${audioLength}`;
-              this.numAudioClipsUploaded++;
-              resolve();
-            })
-          });
-        }))
-      }
-    }
-    
-    if (filesLength > 0) {
-      let photoCounter = 0;
-      this.shadowRoot.querySelector('#progressToast').open();
-      this.shadowRoot.querySelector('#progressPercent').indeterminate = true;
-      if (photosLength > 0) {
-        this.progressText = `Uploading Photo ${photoCounter + 1} of ${photosLength}`;
-        for (let key in this.photosToUpload) {
-          let photo = this.photosToUpload[key];
-
-          // build exif data
-          let dateTime = photo.exifdata.DateTime;
-          let date = dateTime.split(' ')[0].replace(':', '-');
-          let time = dateTime.split(' ')[1];
-          let dateTaken = moment(`${date} ${time}`).valueOf();
-          
-          let photoId = uuidv4();
-          promises.push(new Promise(resolve => {
-            let pictureRef = firebase.storage().ref(`photos/${this.selectedSession.$key}/${photoId}`)
-            pictureRef.put(photo).then(() => {
-              pictureRef.getDownloadURL().then(url => {
-                update[this.selectedSession.$key + '/photos/'+ photoId] = {
-                  url,
-                  date_taken: dateTaken,
-                };
+      await new Promise(async (resolve) => {
+        let audioCounter = 0;
+        this.progressText = `Uploading Audio Clip ${audioCounter + 1} of ${audioLength}`;
+        for (let key in this.audioToUpload) {
+          let clip = this.audioToUpload[key];
+          console.log(clip);
+          let clipId = uuidv4();
+          await new Promise(resolve => {
+            let audioRef = firebase.storage().ref(`audio/${this.selectedSession.$key}/${clipId}`)
+            audioRef.put(clip).then(() => {
+              audioRef.getDownloadURL().then(url => {
+                update[this.selectedSession.$key + '/audio/'+ clipId] = {url};
                 this.progressPercent = (++counter / filesLength) * 100;
-                this.progressText = `Uploading Photo ${++photoCounter} of ${photosLength}`;
-                this.numPhotosUploaded++;
+                this.progressText = `Uploading Audio Clip ${++audioCounter} of ${audioLength}`;
+                this.numAudioClipsUploaded++;
                 resolve();
               })
             });
-          }))
+          })
         }
-      }
-      Promise.all(promises).then(() => {
+        resolve();
+      })
+    }
+    
+    if (filesLength > 0) {
+      await new Promise(async (resolve) => {
+        let photoCounter = 0;
+        this.shadowRoot.querySelector('#progressToast').open();
+        this.shadowRoot.querySelector('#progressPercent').indeterminate = true;
+        if (photosLength > 0) {
+          this.progressText = `Uploading Photo ${photoCounter + 1} of ${photosLength}`;
+          for (let key in this.photosToUpload) {
+            let photo = this.photosToUpload[key];
+
+            // build exif data
+            let dateTime = photo.exifdata.DateTime;
+            let date = dateTime.split(' ')[0].replace(':', '-');
+            let time = dateTime.split(' ')[1];
+            let dateTaken = moment(`${date} ${time}`).valueOf();
+            
+            let photoId = uuidv4();
+            await new Promise(resolve => {
+              let pictureRef = firebase.storage().ref(`photos/${this.selectedSession.$key}/${photoId}`)
+              pictureRef.put(photo).then(() => {
+                pictureRef.getDownloadURL().then(url => {
+                  update[this.selectedSession.$key + '/photos/'+ photoId] = {
+                    url,
+                    date_taken: dateTaken,
+                  };
+                  this.progressPercent = (++counter / filesLength) * 100;
+                  this.progressText = `Uploading Photo ${++photoCounter} of ${photosLength}`;
+                  this.numPhotosUploaded++;
+                  resolve();
+                })
+              });
+            })
+          }
+          resolve();
+        }
+      })
+      
+      if (Object.keys(update).length > 0) {
+        console.log("update", update)
         firebase.database().ref('sessions').update(update).then(() => {
           this.progressText = "Photos Uploaded Complete";
           this.shadowRoot.querySelector('#progressPercent').indeterminate = false;
@@ -347,7 +355,7 @@ class UploadPage extends PolymerElement {
           this.photosToUpload = {};
           setTimeout(() => this.shadowRoot.querySelector('#progressToast').close(), 5000);
         })
-      })
+      }
     }
     else {
       this.toast('No photos selected to upload')

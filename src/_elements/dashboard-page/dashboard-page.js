@@ -73,7 +73,7 @@ class DashboardPage extends PolymerElement {
         #infoColumn {
           border-right: 1px solid lightgray;
           flex: .4;
-          padding: 50px;
+          padding: 25px;
         }
         #fishColumn {
           flex: .6;
@@ -83,6 +83,14 @@ class DashboardPage extends PolymerElement {
           background: #233d4d;
           margin: 20px;
           color: #fcca46;
+        }
+        #tripDetails {
+          margin-bottom: 40px;
+        }
+        #mapContainer {
+          border: 1px solid blue;
+          display: flex;
+          flex: 1
         }
       </style>
       <tacklebox-toolbar user="{{user}}"></tacklebox-toolbar>
@@ -110,16 +118,21 @@ class DashboardPage extends PolymerElement {
         </div>
         <div id="detailsPage" opened\$="{{detailsOpen}}">
             <div id="detailsWrapper">
-              <div id="infoColumn">
+              <div class="flex-col" id="infoColumn">
                 <div class="flex-align-center">
                   <h3 style="margin-left: 5px;">{{selectedTrip.body_of_water}}</h3>
-                  <paper-icon-button icon="icons:build" on-tap="getTripData" id="getTripDataButton"></paper-icon-button>
+                  <paper-icon-button icon="icons:build" on-tap="calcFishData" id="getTripDataButton"></paper-icon-button>
                 </div>
-                <h5 style="margin-left: 5px;">{{getDate(selectedTrip)}}</h5>
-                <span>Temperature</span>
-                <span>H: 72 | L: 70</span>
+                <div id="tripDetails">
+                  <h5 style="margin-left: 5px;">{{getDate(selectedTrip)}}</h5>
+                  <span>Temperature</span>
+                  <span>H: 72 | L: 70</span>
+                </div>
+                <div id="mapContainer">
+                </div>
               </div>
-              <div id="fishColumn">
+              <div class="flex-col-center-vh" id="fishColumn">
+              <span hidden\$="[[selectedTrip.fish]]">No Fish Entries Have Been Found</span>
               <template is="dom-repeat" items="">
                 <div class="fishEntry">
                 
@@ -192,11 +205,14 @@ class DashboardPage extends PolymerElement {
     let key = target.getAttribute('key');
     this.detailsOpen = true;
     this.set('selectedTrip', this.fishingSessions[key]);
-    console.log("key", key)
+    this.set('selectedTripKey', key);
   }
-  getTripData() {
+  calcFishData() {
     this.toast('Getting Trip Data');
-    console.log(this.selectedTrip);
+    var calcFishData = firebase.functions().httpsCallable('calcFishData');
+    calcFishData({key: this.selectedTripKey}).then(metadata => {
+      console.log("metadata", metadata);
+    })
   }
 }
 customElements.define(DashboardPage.is, DashboardPage);
